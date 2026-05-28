@@ -2,7 +2,7 @@
 
 # Install packages and load libraries
 
-install.packages(c("tidyverse", "ggplot2", "patchwork", "scales", "vcd", "lme4", "lmerTest", "emmeans", "performance", "car", "nlme", "ggpubr", "ggcorrplot"))
+install.packages(c("tidyverse", "ggplot2", "patchwork", "scales", "vcd", "lme4", "lmerTest", "emmeans", "performance", "car", "nlme", "ggpubr", "ggcorrplot", "farver"))
 
 library(tidyverse)
 library(ggplot2)
@@ -23,6 +23,7 @@ library(car)
 library(nlme)
 library(ggpubr)
 library(ggcorrplot)
+library(farver)
 
 # Script 01: Data structuring, factor setup, and inspection
 
@@ -261,7 +262,7 @@ p_scatter <- ggplot(df, aes(x = a, y = b, colour = section_coverage)) +
         legend.position  = "right")
 
 
-## Inspect section_coverage (single or double shade cloth) X age (21 and 22)
+## Inspect section_coverage (single or double shade cloth) X age (19 and 31)
 
 # Boxplots: section_coverage × age (dodged)
 p_sec_age_box <- df |>
@@ -1503,3 +1504,97 @@ comparison_table <- bind_rows(
 print(comparison_table, row.names = FALSE)
 
 write.csv(comparison_table, "model_comparison_age_vs_length.csv", row.names = FALSE)
+
+## Now that we have full models - create swatches based on EMM values
+
+# Extract EMMs from fitted weighted models 
+
+emm_sec_vals <- bind_rows(
+  emmeans(weighted_b, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "b", level_var = "section_coverage"),
+  emmeans(weighted_L, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "lightness", level_var = "section_coverage"),
+  emmeans(weighted_a, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "a", level_var = "section_coverage")
+) |> rename(level = section_coverage)
+
+emm_age_vals <- bind_rows(
+  emmeans(weighted_b, specs = "age") |> as.data.frame() |> mutate(metric = "b", level_var = "age"),
+  emmeans(weighted_L, specs = "age") |> as.data.frame() |> mutate(metric = "lightness", level_var = "age"),
+  emmeans(weighted_a, specs = "age") |> as.data.frame() |> mutate(metric = "a", level_var = "age"),
+  emmeans(weighted_chroma, specs = "age") |> as.data.frame() |> mutate(metric = "chroma", level_var = "age")
+) |> rename(level = age)
+
+emm_all <- bind_rows(emm_sec_vals, emm_age_vals)
+
+# Pivot wide so each row = one scenario with L, a, b 
+
+emm_wide <- emm_all |>
+  filter(metric %in% c("lightness", "a", "b")) |>
+  dplyr::select(level_var, level, metric, emmean) |>
+  pivot_wider(names_from = metric, values_from = emmean) |>
+  rename(L = lightness)
+
+# Convert CIELAB to RGB colour space
+lab_matrix <- as.matrix(emm_wide[, c("L", "a", "b")])
+
+rgb_matrix <- convert_colour(lab_matrix,
+                              from       = "lab",
+                              to         = "rgb",
+                              white_from = "D65",
+                              white_to   = "D65") / 255   # farver returns 0–255
+
+# Clamp to [0, 1] (sRGB gamut)
+rgb_matrix <- pmax(pmin(rgb_matrix, 1), 0)
+
+emm_wide <- emm_wide |>
+  mutate(
+    r   = rgb_matrix[, 1],
+    g   = rgb_matrix[, 2],
+    b_c = rgb_matrix[, 3],   # renamed to avoid clash with b* column
+    hex = rgb(r, g, b_c),
+    scenario = case_when(
+      level_var == "section_coverage" & level == "single" ~ "Single shade",
+      level_var == "section_coverage" & level == "double" ~ "Double shade",
+      level_var == "age"              & level == "19"     ~ "Age 19 months",
+      level_var == "age"              & level == "31"     ~ "Age 31 months"
+    ),
+    group = if_else(level_var == "section_coverage",
+                    "Section Coverage", "Year Class (Age)"),
+    lab_label = sprintf("L*=%.1f  a*=%.1f  b*=%.1f", L, a, b),
+    text_col = if_else(L > 55, "#2C2C2C", "white")
+  )
+
+# Plot 
+p_swatches <- ggplot(emm_wide,
+                     aes(x = scenario, y = 1, fill = hex)) +
+  geom_tile(colour = "white", linewidth = 1.5, 
+            height = 0.85, width = 0.92) +          
+  geom_text(aes(label = scenario, colour = text_col),
+            y = 1.18, fontface = "bold", size = 4.5, vjust = 0) +
+  geom_text(aes(label = lab_label, colour = text_col),
+            y = 0.82, size = 4.5, vjust = 1, family = "mono") +
+  geom_text(aes(label = toupper(hex), colour = text_col),
+            y = 1.0, size = 4.5, fontface = "bold") +
+  scale_fill_identity() +
+  scale_colour_identity() +
+  facet_wrap(~group, scales = "free_x") +
+  scale_y_continuous(limits = c(0.55, 1.45), expand = c(0, 0)) +
+  scale_x_discrete(expand = expansion(add = 0.6)) +  
+  labs(
+    x = NULL, y = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text        = element_blank(),
+    axis.ticks       = element_blank(),
+    panel.grid       = element_blank(),
+    strip.text       = element_text(size = 16, face = "bold", colour = "#333333"),
+    plot.title       = element_text(size = 16, face = "bold"),
+    plot.subtitle    = element_text(size = 16,  colour = "grey40"),
+    plot.caption     = element_text(size = 16,  colour = "grey55", face = "italic"),
+    panel.spacing    = unit(2, "lines"),
+    plot.background  = element_rect(fill = "#F8F6F2", colour = NA),  
+    panel.background = element_rect(fill = "#F8F6F2", colour = NA),  
+    strip.background = element_rect(fill = "#F8F6F2", colour = NA)   
+  )
+
+print(p_swatches)
+ggsave("plot_emm_colour_swatches.png", plot = p_swatches, width = 10, height = 4, dpi = 200, bg = "#F8F6F2")
