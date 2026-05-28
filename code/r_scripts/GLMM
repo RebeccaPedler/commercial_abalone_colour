@@ -592,9 +592,9 @@ print(aic_all)
 
 # MODEL LIST 
 model_list <- list(
-  list(mod = full_b,      label = "b*",     response = "b"),
-  list(mod = full_L,      label = "L*",     response = "lightness"),
-  list(mod = full_a,      label = "a*",     response = "a"),
+  list(mod = full_L, label = "L*",     response = "lightness"),
+  list(mod = full_a, label = "a*",     response = "a"),
+  list(mod = full_b, label = "b*",     response = "b"),
   list(mod = full_chroma, label = "Chroma", response = "chroma")
 )
 
@@ -1031,6 +1031,26 @@ print(coef_compare |>
       row.names = FALSE)
 
 ## Coefficients do not shift
+
+# Print final data
+for (lst in list(list(weighted_L, "Lightness"),
+                 list(weighted_a, "a*"),
+                 list(weighted_b, "b*"))) {
+  mod <- lst[[1]]; response <- lst[[2]]
+  
+  cat(sprintf("\n %s \n", response))
+  
+  tt <- summary(mod)$tTable
+  print(tt)
+  
+  ci <- data.frame(
+    term  = rownames(tt),
+    ci_lo = round(tt[, "Value"] - 1.96 * tt[, "Std.Error"], 4),
+    ci_hi = round(tt[, "Value"] + 1.96 * tt[, "Std.Error"], 4)
+  )
+  cat("95% CI:\n")
+  print(ci, row.names = FALSE)
+}
 
 # Script 05: Size metrics — collinearity with age + LMM comparison (age vs length)
 
