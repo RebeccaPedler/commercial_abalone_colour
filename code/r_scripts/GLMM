@@ -92,18 +92,30 @@ str(df)
 dupes <- df_raw |> filter(duplicated(image_id) | duplicated(image_id, fromLast = TRUE))
 if (nrow(dupes) > 0) {
   cat("WARNING: Duplicate image IDs found:\n")
-  print(dupes[, c("image_id", "tank", "abalone_number")], row.names = FALSE)
+  print(dupes[, c("image_id", "tank", "abalone_number", "length_mm")], row.names = FALSE)
 } else {
   cat("No duplicate image IDs.\n")
 }
 
-# Check CIELAB metrics 
+# Check ranges for CIELAB values
 cat(sprintf("  L*: min=%.2f, max=%.2f\n",
             min(df$lightness, na.rm=TRUE), max(df$lightness, na.rm=TRUE))) # should be (0 - 100)
 cat(sprintf("  a*: min=%.2f, max=%.2f\n",
             min(df$a, na.rm=TRUE), max(df$a, na.rm=TRUE))) # should be (-128 - 128)
 cat(sprintf("  b*: min=%.2f, max=%.2f\n",
             min(df$b, na.rm=TRUE), max(df$b, na.rm=TRUE))) # should be (-128 - 128)
+
+# Summary data for abalone morphometrics
+df_no_length_zero <- df_raw |> filter(length_mm != 0)
+
+cat(sprintf("  length_mm*: min=%.2f, max=%.2f\n, average=%.2f\n",
+            min(df_no_length_zero$length_mm, na.rm=TRUE), max(df_no_length_zero$length_mm, na.rm=TRUE), mean(df_no_length_zero$length_mm, na.rm=TRUE)))
+
+cat(sprintf("  width_mm*: min=%.2f, max=%.2f\n, average=%.2f\n",
+            min(df_no_length_zero$width_mm, na.rm=TRUE), max(df_no_length_zero$width_mm, na.rm=TRUE), mean(df_no_length_zero$width_mm, na.rm=TRUE)))
+
+cat(sprintf("  area_mm2*: min=%.2f, max=%.2f\n, average=%.2f\n",
+            min(df_no_length_zero$area_mm, na.rm=TRUE), max(df_no_length_zero$area_mm, na.rm=TRUE), mean(df_no_length_zero$area_mm, na.rm=TRUE)))
 
 # Flag any L* outside valid range (if nothing is returned, there are no outliers)
 invalid_L <- df |> filter(lightness < 0 | lightness > 100)
