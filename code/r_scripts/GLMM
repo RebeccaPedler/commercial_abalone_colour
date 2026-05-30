@@ -34,7 +34,7 @@ df_raw <- read.csv(here("data", "lip_colour_commercial.csv"))
 names(df_raw) <- c("image_id","date","farm","section","tank","YC ","age","diet_name",
                    "diet_code","shade_coverage","section_coverage","tank_position",
                    "abalone_number","length_mm","width_mm","area_mm2","lightness",
-                   "A","B","hue","saturation","brightness","lip_score","L_slope",
+                   "A","B","hue","saturation","brightness","L_slope",
                    "L_intercept","L_r2","a_slope","a_intercept","a_r2","b_slope",
                    "b_intercept","b_r2","lightess_corrected","a_corrected","b_corrected","chroma")
 str(df_raw)
