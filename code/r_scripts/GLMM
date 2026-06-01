@@ -28,21 +28,22 @@ library(farver)
 # Script 01: Data structuring, factor setup, and inspection
 
 ### LOAD & CLEAN DATA
+getwd()
 df_raw <- read.csv(here("data", "lip_colour_commercial.csv"))
 
 # Define column names
-names(df_raw) <- c("image_id","date","farm","section","tank","YC ","age","diet_name",
-                   "diet_code","shade_coverage","section_coverage","tank_position",
-                   "abalone_number","length_mm","width_mm","area_mm2","lightness",
-                   "A","B","hue","saturation","brightness","L_slope",
+names(df_raw) <- c("image_id","date","farm","section","tank", "abalone_number",
+                   "age", "diet", "section_coverage", "length_mm","width_mm","area_mm2","lightness",
+                   "a","b","hue","saturation","brightness", "L_slope",
                    "L_intercept","L_r2","a_slope","a_intercept","a_r2","b_slope",
                    "b_intercept","b_r2","lightess_corrected","a_corrected","b_corrected","chroma")
+nrow(df_raw)
 str(df_raw)
 
 # Rename columns
 names(df_raw)[names(df_raw) == "lightness"] <- "raw_lightness"
-names(df_raw)[names(df_raw) == "A"] <- "raw_A"
-names(df_raw)[names(df_raw) == "B"] <- "raw_B"
+names(df_raw)[names(df_raw) == "a"] <- "raw_A"
+names(df_raw)[names(df_raw) == "b"] <- "raw_B"
 
 names(df_raw)[names(df_raw) == "lightess_corrected"] <- "lightness"
 names(df_raw)[names(df_raw) == "a_corrected"] <- "a"
@@ -54,7 +55,6 @@ df_raw <- df_raw |>
 
 df_raw <- df_raw |> filter(!is.na(section_coverage)) # Delete NA
 df_raw <- df_raw |> filter(!(lightness == 0 & a == 0 & b == 0)) # Delete zero CIELAB rows
-df_raw <- df_raw |> filter(!is.na(length_mm)) # Delete NA
 
 # Correct data types
 df <- df_raw |>
@@ -62,15 +62,12 @@ df <- df_raw |>
     date = factor(date),
 
     # Unordered factors
-    shade_coverage   = factor(shade_coverage),
     section_coverage = factor(section_coverage),
     farm             = factor(farm),
     section          = factor(section),
     tank             = factor(tank),
     age              = factor(age, levels = c(19, 31)),
-    diet_name        = factor(diet_name),
-    diet_code        = factor(diet_code),
-    tank_position    = factor(tank_position),
+    diet             = factor(diet),
 
     # Numeric
     lightness  = as.numeric(lightness),
@@ -84,8 +81,6 @@ df <- df_raw |>
     abalone_id = paste(tank, abalone_number, sep = "_")
   )
 
-str(df)
-
 ### CLEAN DATA 
 
 # Flag duplicate image IDs
@@ -97,7 +92,7 @@ if (nrow(dupes) > 0) {
   cat("No duplicate image IDs.\n")
 }
 
-# Check ranges for CIELAB values
+# Check ranges for CIELAB values and length
 cat(sprintf("  L*: min=%.2f, max=%.2f\n",
             min(df$lightness, na.rm=TRUE), max(df$lightness, na.rm=TRUE))) # should be (0 - 100)
 cat(sprintf("  a*: min=%.2f, max=%.2f\n",
@@ -365,7 +360,7 @@ df |>
 
 # Create separate dataframe to work on tank level
 tank_df <- df |>
-  distinct(tank, section_coverage, age, diet_code, farm, section)
+  distinct(tank, section_coverage, age, diet, farm, section)
 
 ## CROSSTAB COUNTS (tank level)
 
@@ -375,27 +370,27 @@ table(tank_df$section_coverage, tank_df$age) |>
   print()
 
 # section_coverage
-table(tank_df$section_coverage, tank_df$diet_code) |>
+table(tank_df$section_coverage, tank_df$diet) |>
   addmargins() |>
   print()
 
 # age x diet
-table(tank_df$age, tank_df$diet_code) |>
+table(tank_df$age, tank_df$diet) |>
   addmargins() |>
   print()
 
-# Three-way: section_coverage x age x diet_code (n tanks)
+# Three-way: section_coverage x age x diet (n tanks)
 tank_df |>
-  count(section_coverage, age, diet_code) |>
-  arrange(section_coverage, age, diet_code) |>
+  count(section_coverage, age, diet) |>
+  arrange(section_coverage, age, diet) |>
   as.data.frame() |>
   print(row.names = FALSE)
 
 ## VISUALISE 
 
 p_tile <- tank_df |>
-  count(section_coverage, age, diet_code) |>
-  ggplot(aes(x = age, y = diet_code, fill = n)) +
+  count(section_coverage, age, diet) |>
+  ggplot(aes(x = age, y = diet, fill = n)) +
   geom_tile(colour = "white", linewidth = 0.8) +
   geom_text(aes(label = n), size = 3.5, fontface = "bold",
             colour = "white") +
@@ -433,8 +428,8 @@ cramer_v <- function(x, y) {
 # Create pairs for moderators
 pairs <- list(
   c("section_coverage", "age"),
-  c("section_coverage", "diet_code"),
-  c("age",              "diet_code")
+  c("section_coverage", "diet"),
+  c("age",              "diet")
 )
 
 for (pair in pairs) {
@@ -450,10 +445,10 @@ tank_num <- tank_df |>
     sec_double = as.integer(section_coverage == "double"),
     age_22      = as.integer(age == "22"),
     # diet_code reference = 1
-    diet_2 = as.integer(diet_code == 2),
-    diet_3 = as.integer(diet_code == 3),
-    diet_4 = as.integer(diet_code == 4),
-    diet_5 = as.integer(diet_code == 5)
+    diet_2 = as.integer(diet == 2),
+    diet_3 = as.integer(diet == 3),
+    diet_4 = as.integer(diet == 4),
+    diet_5 = as.integer(diet == 5)
   )
 
 calc_vif <- function(outcome, predictors, data) {
@@ -498,11 +493,19 @@ CIELAB_correlation_p <- ggcorrplot(cor_r,
                 lab_size   = 5,
                 sig.level  = 0.05,
                 insig      = "blank",
-                colors     = c("#C0392B", "white", "#1F618D"),
-                ggtheme    = theme_minimal(base_size = 13))
+                colors     = c("#C0392B", "white", "#1F618D")) +        
+        theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.ticks = element_line(colour = "black"),
+        axis.ticks.length = unit(0.2, "cm"),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 0, hjust = 0.5),
+        panel.background = element_rect(fill = "white", colour = NA),
+        plot.background = element_rect(fill = "white", colour = NA))
  
 print(CIELAB_correlation_p)
-ggsave(here("figures", "plot_Lab_correlation_matrix.png"), CIELAB_correlation_p, width = 5, height = 5, dpi = 300)
+ggsave(here("figures", "plot_Lab_correlation_matrix.png"), CIELAB_correlation_p, width = 10, height = 10, dpi = 300)
 
 ### Script 03: Linear Mixed Models — b*, L*, a* ~ section_coverage + age + diet
 
@@ -514,11 +517,11 @@ df_mod <- df |>
   mutate(
     farm             = factor(farm, ordered = FALSE),
     section_coverage = factor(section_coverage, ordered = FALSE),
-    diet_code        = factor(diet_code, ordered = FALSE),
+    diet_code        = factor(diet, ordered = FALSE),
     age              = factor(age, ordered = FALSE),
     section_coverage = relevel(section_coverage, ref = "single"),
     age              = relevel(age, ref = "19"),
-    diet_code        = relevel(diet_code, ref = "1")
+    diet             = relevel(diet, ref = "1")
   )
 
 # NULL MODELS & ICC 
@@ -550,12 +553,14 @@ print(icc_table, row.names = FALSE)
 fit_steps <- function(response, data = df_mod) {
   f0  <- as.formula(paste(response, "~ 1                                   + (1 | tank)"))
   f1  <- as.formula(paste(response, "~ section_coverage                    + (1 | tank)"))
-  f2  <- as.formula(paste(response, "~ section_coverage + age               + (1 | tank)"))
+  f2  <- as.formula(paste(response, "~ age                                 + (1 | tank)"))
+  f3  <- as.formula(paste(response, "~ section_coverage + age              + (1 | tank)"))
 
   list(
     m0 = lmer(f0, data = data, REML = FALSE, control = lmerControl(optimizer = "bobyqa")),
     m1 = lmer(f1, data = data, REML = FALSE, control = lmerControl(optimizer = "bobyqa")),
-    m2 = lmer(f2, data = data, REML = FALSE, control = lmerControl(optimizer = "bobyqa"))
+    m2 = lmer(f2, data = data, REML = FALSE, control = lmerControl(optimizer = "bobyqa")),
+    m3 = lmer(f3, data = data, REML = FALSE, control = lmerControl(optimizer = "bobyqa"))
   )
 }
 
@@ -569,7 +574,8 @@ models_chroma <- fit_steps("chroma")
 model_labels <- c(
   "m0: null (intercept only)",
   "m1: + section_coverage",
-  "m2: + section_coverage + age"
+  "m2: + age",
+  "m3: + section_coverage + age"
 )
 
 aic_table <- function(mods, response) {
@@ -599,6 +605,24 @@ aic_all <- bind_rows(
 
 # Print per response 
 print(aic_all)
+
+# Refit final models 
+
+## REFIT SELECTED MODEL WITH REML
+
+final_formula_b      <- b         ~ section_coverage + age + (1 | tank)
+final_formula_L      <- lightness ~ section_coverage + age + (1 | tank)
+final_formula_a      <- a         ~ section_coverage + age + (1 | tank)
+final_formula_chroma <- chroma    ~ section_coverage + age + (1 | tank)
+
+full_b <- lmer(final_formula_b, data = df_mod, REML = TRUE,
+               control = lmerControl(optimizer = "bobyqa"))
+full_L <- lmer(final_formula_L, data = df_mod, REML = TRUE,
+               control = lmerControl(optimizer = "bobyqa"))
+full_a <- lmer(final_formula_a, data = df_mod, REML = TRUE,
+               control = lmerControl(optimizer = "bobyqa"))
+full_chroma <- lmer(final_formula_chroma, data = df_mod, REML = TRUE,
+               control = lmerControl(optimizer = "bobyqa"))
 
 ### Script 04: LMM diagnostics — Lightness, a*, b*, chroma
 
@@ -1073,12 +1097,15 @@ ctrl <- lmeControl(opt = "optim", maxIter = 200, msMaxIter = 200)
 df <- df |>
   mutate(age_num = as.numeric(as.character(age)))
 
+# Filter out missing morphometric data
+df <- df |> filter(!(length == 0))
+
 resp_cols <- c("Lightness" = "#5B8FA8", "a*" = "#7A9E5A", "b*" = "#C4A24A")
 age_cols   <- c("19" = "#E07B39", "31" = "#5B8FA8")
 
 ### HISTOGRAMS: size metrics coloured by age
 
-make_hist <- function(var, xlab, binwidth = NULL) {
+make_hist <- function(var, xlab, binwidth = NULL, x_limits = NULL, x_breaks = waiver()) {
   if (is.null(binwidth)) {
     rng      <- range(df[[var]], na.rm = TRUE)
     binwidth <- (rng[2] - rng[1]) / 40
@@ -1090,6 +1117,9 @@ make_hist <- function(var, xlab, binwidth = NULL) {
 
   ggplot(df |> filter(!is.na(.data[[var]])),
          aes(x = .data[[var]], fill = age, colour = age)) +
+    scale_x_continuous(
+      limits = x_limits,
+      breaks = x_breaks) +
     geom_histogram(binwidth = binwidth, alpha = 0.55,
                    position = "identity", linewidth = 0.2) +
     geom_density(aes(y = after_stat(density) *
@@ -1100,28 +1130,63 @@ make_hist <- function(var, xlab, binwidth = NULL) {
     scale_fill_manual(values = age_cols, name = "Age (months)") +
     scale_colour_manual(values = age_cols, name = "Age (months)") +
     labs(x = xlab, y = "Count") +
-    theme_minimal(base_size = 11) +
     theme(panel.grid.minor = element_blank(),
-          legend.position  = "right",
-          plot.caption     = element_text(size = 8, colour = "grey50"))
+        panel.grid.major = element_blank(),
+        axis.line = element_line(colour = "black"),
+        strip.text = element_text(size = 11),
+        axis.ticks = element_line(colour = "black"),
+        axis.ticks.length = unit(0.2, "cm"),
+        plot.title = element_text(size = 13, face = "bold"),
+        panel.background = element_rect(fill = "white", colour = NA),
+        plot.background = element_rect(fill = "white", colour = NA))
 }
 
-p_len  <- make_hist("length", "Length (mm)")
-p_wid  <- make_hist("width", "Width (mm)")
-p_area <- make_hist("area", "Area (mm²)", binwidth = 300)
+p_len  <- make_hist("length", "Length (mm)", x_limits = c(20, 180), x_breaks = seq(20, 180, 20)) + ggtitle("A)")
+p_wid  <- make_hist("width", "Width (mm)", x_limits = c(20, 140), x_breaks = seq(20, 140, 20)) + ggtitle("B)")
+p_area <- make_hist("area", "Area (mm²)", binwidth = 300, x_limits = c(0, 15000), x_breaks = seq(0, 15000, 2500)) + ggtitle("C)")
 
-p_size_hists <- (p_len / p_wid / p_area) + plot_annotation("19 months = orange, 31 months = blue")
+p_size_hists <- (p_len / p_wid / p_area)
 
 print(p_size_hists)
 ggsave(here("figures", "plot_size_histograms_by_yc.png"), p_size_hists, width = 9, height = 10, dpi = 300)
 
 ### COLLINEARITY: size metrics × each other × age
 
-cor_matrix <- df |>
-  select(length, width, area, age_num) |>
-  cor(use = "complete.obs") |>
-  round(3)
-print(cor_matrix)
+# Prepare data
+size_df <- df |>
+  dplyr::select(age_num, length, area, width) |>
+  tidyr::drop_na()
+ 
+# Pearson correlation + p-values
+cor_r_size <- cor(size_df, method = "pearson")
+cor_p_size <- cor_pmat(size_df)
+ 
+# Print results
+print(round(cor_r_size, 3))
+print(format(cor_p_size, scientific = TRUE))
+ 
+# Plot
+size_correlation_p <- ggcorrplot(cor_r_size,
+                p.mat      = cor_p_size,
+                method     = "square",
+                type       = "lower",
+                lab        = TRUE,
+                lab_size   = 5,
+                sig.level  = 0.05,
+                insig      = "blank",
+                colors     = c("#C0392B", "white", "#1F618D")) +
+        theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.ticks = element_line(colour = "black"),
+        axis.ticks.length = unit(0.2, "cm"),
+        axis.text = element_text(size = 12),
+        axis.text.x = element_text(angle = 0, hjust = 0.5),
+        panel.background = element_rect(fill = "white", colour = NA),
+        plot.background = element_rect(fill = "white", colour = NA))
+ 
+print(size_correlation_p)
+ggsave(here("figures", "plot_Lab_correlation_matrix.png"), CIELAB_correlation_p, width = 5, height = 5, dpi = 300)
 
 ### MODELLING DATASETS
 # Model A: section_coverage + age
@@ -1133,25 +1198,23 @@ df_modA <- df |>
   mutate(
     section_coverage = factor(section_coverage, ordered = FALSE),
     age              = factor(age,               ordered = FALSE),
-    diet             = factor(diet_code,         ordered = FALSE),
     section_coverage = relevel(section_coverage, ref = "single"),
-    age              = relevel(age,               ref = "19"),
-    diet             = relevel(diet,             ref = "1")
+    age              = relevel(age,               ref = "19")
   )
 
-# Model B: section_coverage + length_scaled
+# Model B&C: section_coverage + length_scaled OR area_scaled
 
-df_modB <- df |>
+df_modBC <- df |>
   filter(!is.na(section_coverage),
          !is.na(b), !is.na(a), !is.na(lightness),
          !is.na(length), lightness != 0) |>
   mutate(
     section_coverage = factor(section_coverage, ordered = FALSE),
-    diet             = factor(diet_code,         ordered = FALSE),
     section_coverage = relevel(section_coverage, ref = "single"),
-    diet             = relevel(diet,             ref = "1"),
-    length_scaled    = scale(length)[, 1]   # z-score: 1 unit = 1 SD
+    length_scaled    = scale(length)[, 1],
+    area_scaled    = scale(area)[, 1]   # z-score: 1 unit = 1 SD
   )
+
 
 # Model A: section_coverage + age
 
@@ -1180,24 +1243,46 @@ full_A_chroma <- lme(chroma    ~ section_coverage + age,
 full_B_L <- lme(lightness ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modB, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 full_B_a <- lme(a         ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modB, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 full_B_b <- lme(b         ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modB, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 full_B_chroma <- lme(chroma    ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modB, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
+
+# Model C: section_coverage + length_scaled 
+
+full_C_L <- lme(lightness ~ section_coverage + area_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBC, method = "REML", control = ctrl)
+
+full_C_a <- lme(a         ~ section_coverage + area_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBC, method = "REML", control = ctrl)
+full_C_b <- lme(b         ~ section_coverage + area_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBC, method = "REML", control = ctrl)
+
+full_C_chroma <- lme(chroma    ~ section_coverage + area_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBC, method = "REML", control = ctrl)
 
 ### PRINT SUMMARIES
 
+# Create function to print summary
 print_lme_summary <- function(mod, label) {
   cat(sprintf("\n%s\n--- %s ---\n%s\n", strrep("=", 60), label, strrep("=", 60)))
   print(summary(mod))
@@ -1214,6 +1299,7 @@ print_lme_summary <- function(mod, label) {
   cat(sprintf("  R² conditional: %.3f\n", r2$R2_conditional))
 }
 
+# Print summary for all models
 print_lme_summary(full_A_L,      "Model A — L*     | section_coverage + age")
 print_lme_summary(full_A_a,      "Model A — a*     | section_coverage + age")
 print_lme_summary(full_A_b,      "Model A — b*     | section_coverage + age")
@@ -1222,11 +1308,17 @@ print_lme_summary(full_B_L,      "Model B — L*     | section_coverage + length
 print_lme_summary(full_B_a,      "Model B — a*     | section_coverage + length_scaled")
 print_lme_summary(full_B_b,      "Model B — b*     | section_coverage + length_scaled")
 print_lme_summary(full_B_chroma, "Model B — chroma | section_coverage + length_scaled")
+print_lme_summary(full_C_L,      "Model C — L*     | section_coverage + area_scaled")
+print_lme_summary(full_C_a,      "Model C — a*     | section_coverage + area_scaled")
+print_lme_summary(full_C_b,      "Model C — b*     | section_coverage + area_scaled")
+print_lme_summary(full_C_chroma, "Model C — chroma | section_coverage + area_scaled")
+
 
 ### COMPARISON TABLE
 
 refit_ml <- function(mod) update(mod, method = "ML")
 
+# Create function to make summary table
 get_row <- function(mod, response, model_label, data) {
   r2   <- performance::r2(mod)
   sigs <- coef(mod$modelStruct$varStruct, unconstrained = FALSE, allCoef = TRUE) *
@@ -1248,13 +1340,17 @@ get_row <- function(mod, response, model_label, data) {
 
 comparison_table <- bind_rows(
   get_row(full_A_L,      "L*",     "A: age",    df_modA),
-  get_row(full_B_L,      "L*",     "B: length", df_modB),
+  get_row(full_B_L,      "L*",     "B: length", df_modBC),
+  get_row(full_C_L,      "L*",     "C: area",   df_modBC),
   get_row(full_A_a,      "a*",     "A: age",    df_modA),
-  get_row(full_B_a,      "a*",     "B: length", df_modB),
+  get_row(full_B_a,      "a*",     "B: length", df_modBC),
+  get_row(full_C_a,      "a*",     "C: area",   df_modBC),
   get_row(full_A_b,      "b*",     "A: age",    df_modA),
-  get_row(full_B_b,      "b*",     "B: length", df_modB),
+  get_row(full_B_b,      "b*",     "B: length", df_modBC),
+  get_row(full_C_b,      "b*",     "C: area",   df_modBC),
   get_row(full_A_chroma, "chroma", "A: age",    df_modA),
-  get_row(full_B_chroma, "chroma", "B: length", df_modB)
+  get_row(full_B_chroma, "chroma", "B: length", df_modBC),
+  get_row(full_C_chroma, "chroma", "B: area",   df_modBC),
 )
 
 print(comparison_table, row.names = FALSE)
