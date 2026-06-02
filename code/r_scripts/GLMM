@@ -29,12 +29,12 @@ library(farver)
 
 ### LOAD & CLEAN DATA
 getwd()
-df_raw <- read.csv(here("data", "lip_colour_commercial.csv"))
+df_raw <- read.csv("lip_colour_commercial.csv")
 
 # Define column names
 names(df_raw) <- c("image_id","date","farm","section","tank", "abalone_number",
-                   "age", "diet", "section_coverage", "length_mm","width_mm","area_mm2","lightness",
-                   "a","b","hue","saturation","brightness", "L_slope",
+                   "age", "diet", "section_coverage", "length_mm","width_mm","area_mm2","weight_g", "condition_factor",
+                   "lightness", "a","b","hue","saturation","brightness", "L_slope",
                    "L_intercept","L_r2","a_slope","a_intercept","a_r2","b_slope",
                    "b_intercept","b_r2","lightess_corrected","a_corrected","b_corrected","chroma")
 nrow(df_raw)
@@ -70,13 +70,14 @@ df <- df_raw |>
     diet             = factor(diet),
 
     # Numeric
-    lightness  = as.numeric(lightness),
-    a          = as.numeric(a),
-    b          = as.numeric(b),
-    chroma     = as.numeric(chroma),
-    length     = as.numeric(length_mm),
-    width      = as.numeric(width_mm),
-    area       = as.numeric(area_mm2),
+    lightness        = as.numeric(lightness),
+    a                = as.numeric(a),
+    b                = as.numeric(b),
+    chroma           = as.numeric(chroma),
+    length           = as.numeric(length_mm),
+    width            = as.numeric(width_mm),
+    area             = as.numeric(area_mm2),
+    condition_factor = as.numeric(condition_factor),
 
     abalone_id = paste(tank, abalone_number, sep = "_")
   )
@@ -110,7 +111,10 @@ cat(sprintf("  width_mm*: min=%.2f, max=%.2f\n, average=%.2f\n",
             min(df_no_length_zero$width_mm, na.rm=TRUE), max(df_no_length_zero$width_mm, na.rm=TRUE), mean(df_no_length_zero$width_mm, na.rm=TRUE)))
 
 cat(sprintf("  area_mm2*: min=%.2f, max=%.2f\n, average=%.2f\n",
-            min(df_no_length_zero$area_mm, na.rm=TRUE), max(df_no_length_zero$area_mm, na.rm=TRUE), mean(df_no_length_zero$area_mm, na.rm=TRUE)))
+            min(df_no_length_zero$area_mm2, na.rm=TRUE), max(df_no_length_zero$area_mm2, na.rm=TRUE), mean(df_no_length_zero$area_mm2, na.rm=TRUE)))
+
+cat(sprintf("  condition_factor*: min=%.2f, max=%.2f\n, average=%.2f\n",
+            min(df_no_length_zero$condition_factor, na.rm=TRUE), max(df_no_length_zero$condition_factor, na.rm=TRUE), mean(df_no_length_zero$condition_factor, na.rm=TRUE)))
 
 # Flag any L* outside valid range (if nothing is returned, there are no outliers)
 invalid_L <- df |> filter(lightness < 0 | lightness > 100)
@@ -131,7 +135,7 @@ flag_outliers <- function(data, var) {
     ) |>
     ungroup() |>
     filter(outlier) |>
-    dplyr::select(image_id, tank, diet_code, age, all_of(var), z_within)
+    dplyr::select(image_id, tank, diet, age, all_of(var), z_within)
 }
 
 for (var in c("lightness", "a", "b")) {
@@ -142,7 +146,10 @@ for (var in c("lightness", "a", "b")) {
 
 ### OBSERVE LEVELS AND OBSERVATIONS FOR EACH FACTOR
 
-factor_vars <- c("farm", "section", "age", "diet_code",
+# Total number of observations
+nrow(df)
+
+factor_vars <- c("farm", "section", "age", "diet",
                  "section_coverage")
 
 for (v in factor_vars) {
@@ -443,8 +450,8 @@ for (pair in pairs) {
 tank_num <- tank_df |>
   mutate(
     sec_double = as.integer(section_coverage == "double"),
-    age_22      = as.integer(age == "22"),
-    # diet_code reference = 1
+    age_19      = as.integer(age == "19"),
+    # diet reference = 1
     diet_2 = as.integer(diet == 2),
     diet_3 = as.integer(diet == 3),
     diet_4 = as.integer(diet == 4),
@@ -460,14 +467,14 @@ calc_vif <- function(outcome, predictors, data) {
   ))
 }
 
-calc_vif("sec_double", c("age_22","diet_2","diet_3","diet_4","diet_5"), tank_num)
-calc_vif("age_22",c("sec_double","diet_2","diet_3","diet_4","diet_5"),tank_num)
-calc_vif("diet_2", c("sec_double","age_22"), tank_num)
-calc_vif("diet_3", c("sec_double","age_22"), tank_num)
-calc_vif("diet_4", c("sec_double","age_22"), tank_num)
-calc_vif("diet_5", c("sec_double","age_22"), tank_num)
+calc_vif("sec_double", c("age_19","diet_2","diet_3","diet_4","diet_5"), tank_num)
+calc_vif("age_19",c("sec_double","diet_2","diet_3","diet_4","diet_5"),tank_num)
+calc_vif("diet_2", c("sec_double","age_19"), tank_num)
+calc_vif("diet_3", c("sec_double","age_19"), tank_num)
+calc_vif("diet_4", c("sec_double","age_19"), tank_num)
+calc_vif("diet_5", c("sec_double","age_19"), tank_num)
 
-# Diet and age are correlated. All Diets not evenly represented accross age.
+# Diets not evenly represented accross age.
 
 ## CORRELATION OF CIELAB METRICS
 
@@ -505,7 +512,7 @@ CIELAB_correlation_p <- ggcorrplot(cor_r,
         plot.background = element_rect(fill = "white", colour = NA))
  
 print(CIELAB_correlation_p)
-ggsave(here("figures", "plot_Lab_correlation_matrix.png"), CIELAB_correlation_p, width = 10, height = 10, dpi = 300)
+ggsave(here("figures", "CIELAB_correlation_p.png"), CIELAB_correlation_p, width = 10, height = 10, dpi = 300)
 
 ### Script 03: Linear Mixed Models — b*, L*, a* ~ section_coverage + age + diet
 
@@ -517,14 +524,14 @@ df_mod <- df |>
   mutate(
     farm             = factor(farm, ordered = FALSE),
     section_coverage = factor(section_coverage, ordered = FALSE),
-    diet_code        = factor(diet, ordered = FALSE),
+    diet             = factor(diet, ordered = FALSE),
     age              = factor(age, ordered = FALSE),
     section_coverage = relevel(section_coverage, ref = "single"),
     age              = relevel(age, ref = "19"),
     diet             = relevel(diet, ref = "1")
   )
 
-# NULL MODELS & ICC 
+## NULL MODELS & ICC 
 # Fit intercept-only models (REML) to estimate ICC before any fixed effects
 
 null_b <- lmer(b ~ 1 + (1 | tank), data = df_mod, REML = TRUE,
@@ -597,9 +604,9 @@ aic_table <- function(mods, response) {
 }
 
 aic_all <- bind_rows(
-  aic_table(models_b, "b*"),
-  aic_table(models_L, "L*"),
+  aic_table(models_L, "lightness"),
   aic_table(models_a, "a*"),
+  aic_table(models_b, "b*"),
   aic_table(models_chroma, "chroma")
 )
 
@@ -610,19 +617,24 @@ print(aic_all)
 
 ## REFIT SELECTED MODEL WITH REML
 
-final_formula_b      <- b         ~ section_coverage + age + (1 | tank)
 final_formula_L      <- lightness ~ section_coverage + age + (1 | tank)
 final_formula_a      <- a         ~ section_coverage + age + (1 | tank)
+final_formula_b      <- b         ~ section_coverage + age + (1 | tank)
 final_formula_chroma <- chroma    ~ section_coverage + age + (1 | tank)
 
-full_b <- lmer(final_formula_b, data = df_mod, REML = TRUE,
-               control = lmerControl(optimizer = "bobyqa"))
 full_L <- lmer(final_formula_L, data = df_mod, REML = TRUE,
                control = lmerControl(optimizer = "bobyqa"))
 full_a <- lmer(final_formula_a, data = df_mod, REML = TRUE,
                control = lmerControl(optimizer = "bobyqa"))
+full_b <- lmer(final_formula_b, data = df_mod, REML = TRUE,
+               control = lmerControl(optimizer = "bobyqa"))
 full_chroma <- lmer(final_formula_chroma, data = df_mod, REML = TRUE,
                control = lmerControl(optimizer = "bobyqa"))
+
+summary(full_L)
+summary(full_a)
+summary(full_b)
+summary(full_chroma)
 
 ### Script 04: LMM diagnostics — Lightness, a*, b*, chroma
 
@@ -1066,9 +1078,10 @@ print(coef_compare |>
         arrange(response, term_clean, model),
       row.names = FALSE)
 
-## Coefficients do not shift
+## Shade cloth becomes significant for lightness, age remains non-significant
+# All other coefficients do not shift
 
-# Print final data
+# Print final data using weighted model
 for (lst in list(list(weighted_L, "Lightness"),
                  list(weighted_a, "a*"),
                  list(weighted_b, "b*"))) {
@@ -1088,7 +1101,69 @@ for (lst in list(list(weighted_L, "Lightness"),
   print(ci, row.names = FALSE)
 }
 
-# Script 05: Size metrics — collinearity with age + LMM comparison (age vs length)
+## EXTRACT EMMs FROM WEIGHTED FITTED MODELS
+
+emm_sec_vals <- bind_rows(
+  emmeans(weighted_L, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "lightness", level_var = "section_coverage"),
+  emmeans(weighted_a, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "a", level_var = "section_coverage"),
+  emmeans(weighted_b, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "b", level_var = "section_coverage"),
+) |> rename(level = section_coverage)
+
+emm_age_vals <- bind_rows(
+  emmeans(weighted_L, specs = "age") |> as.data.frame() |> mutate(metric = "lightness", level_var = "age"),
+  emmeans(weighted_a, specs = "age") |> as.data.frame() |> mutate(metric = "a", level_var = "age"),
+  emmeans(weighted_b, specs = "age") |> as.data.frame() |> mutate(metric = "b", level_var = "age"),
+  emmeans(weighted_chroma, specs = "age") |> as.data.frame() |> mutate(metric = "chroma", level_var = "age")
+) |> rename(level = age)
+
+emm_all <- bind_rows(emm_sec_vals, emm_age_vals)
+
+print(emm_all)
+
+## TUKEY PAIRWISE COMPARISON
+extract_pairs <- function(mod, spec, metric_name) {
+  emmeans(mod, specs = spec) |>
+    pairs(adjust = "tukey") |>
+    as.data.frame() |>
+    mutate(
+      metric    = metric_name,
+      level_var = spec
+    )
+}
+
+# Section coverage contrasts
+pairs_sec <- bind_rows(
+  extract_pairs(weighted_L,      "section_coverage", "lightness"),
+  extract_pairs(weighted_a,      "section_coverage", "a"),
+  extract_pairs(weighted_b,      "section_coverage", "b"),
+  extract_pairs(weighted_chroma, "section_coverage", "chroma")
+)
+
+# Age contrasts 
+pairs_age <- bind_rows(
+  extract_pairs(weighted_L,      "age", "lightness"),
+  extract_pairs(weighted_a,      "age", "a"),
+  extract_pairs(weighted_b,      "age", "b"),
+  extract_pairs(weighted_chroma, "age", "chroma")
+)
+
+# Combine all contrasts 
+pairs_all <- bind_rows(pairs_sec, pairs_age)
+
+print(pairs_all)
+
+# Join EMMs and pairwise contrasts into one summary table 
+emm_summary <- emm_all |>
+  dplyr::select(metric, level_var, level, emmean, SE, lower.CL, upper.CL) |>
+  left_join(
+    pairs_all |>
+      dplyr::select(metric, level_var, contrast, t.ratio, df, p.value),
+    by = c("metric", "level_var")
+  )
+
+print(emm_summary)
+
+# Script 05: Size metrics — collinearity with age + LMM comparison (age vs length vs area vs condition factor)
 
 ctrl <- lmeControl(opt = "optim", maxIter = 200, msMaxIter = 200)
 
@@ -1103,7 +1178,7 @@ df <- df |> filter(!(length == 0))
 resp_cols <- c("Lightness" = "#5B8FA8", "a*" = "#7A9E5A", "b*" = "#C4A24A")
 age_cols   <- c("19" = "#E07B39", "31" = "#5B8FA8")
 
-### HISTOGRAMS: size metrics coloured by age
+## HISTOGRAMS: size metrics coloured by age
 
 make_hist <- function(var, xlab, binwidth = NULL, x_limits = NULL, x_breaks = waiver()) {
   if (is.null(binwidth)) {
@@ -1144,17 +1219,22 @@ make_hist <- function(var, xlab, binwidth = NULL, x_limits = NULL, x_breaks = wa
 p_len  <- make_hist("length", "Length (mm)", x_limits = c(20, 180), x_breaks = seq(20, 180, 20)) + ggtitle("A)")
 p_wid  <- make_hist("width", "Width (mm)", x_limits = c(20, 140), x_breaks = seq(20, 140, 20)) + ggtitle("B)")
 p_area <- make_hist("area", "Area (mm²)", binwidth = 300, x_limits = c(0, 15000), x_breaks = seq(0, 15000, 2500)) + ggtitle("C)")
+P_condition_factor <- make_hist("condition_factor", "Conditition Factor", x_limits = c(0.7, 0.8), x_breaks = seq(0.7, 0.8, 0.05))
 
+# Patch plot
 p_size_hists <- (p_len / p_wid / p_area)
 
 print(p_size_hists)
 ggsave(here("figures", "plot_size_histograms_by_yc.png"), p_size_hists, width = 9, height = 10, dpi = 300)
 
+# Inspect condition_factor individually
+P_condition_factor
+
 ### COLLINEARITY: size metrics × each other × age
 
 # Prepare data
 size_df <- df |>
-  dplyr::select(age_num, length, area, width) |>
+  dplyr::select(age_num, length, area, width, condition_factor) |>
   tidyr::drop_na()
  
 # Pearson correlation + p-values
@@ -1186,7 +1266,7 @@ size_correlation_p <- ggcorrplot(cor_r_size,
         plot.background = element_rect(fill = "white", colour = NA))
  
 print(size_correlation_p)
-ggsave(here("figures", "plot_Lab_correlation_matrix.png"), CIELAB_correlation_p, width = 5, height = 5, dpi = 300)
+ggsave(here("figures", "size_correlation_p.png"), size_correlation_p, width = 10, height = 10, dpi = 300)
 
 ### MODELLING DATASETS
 # Model A: section_coverage + age
@@ -1202,19 +1282,22 @@ df_modA <- df |>
     age              = relevel(age,               ref = "19")
   )
 
-# Model B&C: section_coverage + length_scaled OR area_scaled
+# Model B&C&D: section_coverage + length_scaled OR area_scaled OR condition_factor
+str(df)
 
-df_modBC <- df |>
+df_modBCD <- df |>
   filter(!is.na(section_coverage),
          !is.na(b), !is.na(a), !is.na(lightness),
-         !is.na(length), lightness != 0) |>
+         length != 0, lightness != 0) |>
   mutate(
-    section_coverage = factor(section_coverage, ordered = FALSE),
-    section_coverage = relevel(section_coverage, ref = "single"),
-    length_scaled    = scale(length)[, 1],
-    area_scaled    = scale(area)[, 1]   # z-score: 1 unit = 1 SD
+    section_coverage        = factor(section_coverage, ordered = FALSE),
+    section_coverage        = relevel(section_coverage, ref = "single"),
+    length_scaled           = scale(length)[, 1],
+    area_scaled             = scale(area)[, 1],
+    condition_factor_scaled = scale(condition_factor)[, 1]
   )
 
+head(df_modBCD,30)
 
 # Model A: section_coverage + age
 
@@ -1243,42 +1326,64 @@ full_A_chroma <- lme(chroma    ~ section_coverage + age,
 full_B_L <- lme(lightness ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
 
 full_B_a <- lme(a         ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
 full_B_b <- lme(b         ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
 
 full_B_chroma <- lme(chroma    ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
 
 # Model C: section_coverage + length_scaled 
 
 full_C_L <- lme(lightness ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
 
 full_C_a <- lme(a         ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
 full_C_b <- lme(b         ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
 
 full_C_chroma <- lme(chroma    ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBC, method = "REML", control = ctrl)
+                data    = df_modBCD, method = "REML", control = ctrl)
+
+# Model D: section_coverage + condition_factor_scaled 
+
+full_D_L <- lme(lightness ~ section_coverage + condition_factor_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBCD, method = "REML", control = ctrl)
+
+full_D_a <- lme(a         ~ section_coverage + condition_factor_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBCD, method = "REML", control = ctrl)
+
+full_D_b <- lme(b         ~ section_coverage + condition_factor_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBCD, method = "REML", control = ctrl)
+
+full_D_chroma <- lme(chroma    ~ section_coverage + condition_factor_scaled,
+                random  = ~ 1 | tank,
+                weights = varIdent(form = ~ 1 | section_coverage),
+                data    = df_modBCD, method = "REML", control = ctrl)
 
 ### PRINT SUMMARIES
 
@@ -1312,7 +1417,10 @@ print_lme_summary(full_C_L,      "Model C — L*     | section_coverage + area_s
 print_lme_summary(full_C_a,      "Model C — a*     | section_coverage + area_scaled")
 print_lme_summary(full_C_b,      "Model C — b*     | section_coverage + area_scaled")
 print_lme_summary(full_C_chroma, "Model C — chroma | section_coverage + area_scaled")
-
+print_lme_summary(full_D_L,      "Model D — L*     | section_coverage + condition_factor_scaled")
+print_lme_summary(full_D_a,      "Model D — a*     | section_coverage + condition_factor_scaled")
+print_lme_summary(full_D_b,      "Model D — b*     | section_coverage + condition_factor_scaled")
+print_lme_summary(full_D_chroma, "Model D — chroma | section_coverage + condition_factor_scaled")
 
 ### COMPARISON TABLE
 
@@ -1339,18 +1447,22 @@ get_row <- function(mod, response, model_label, data) {
 }
 
 comparison_table <- bind_rows(
-  get_row(full_A_L,      "L*",     "A: age",    df_modA),
-  get_row(full_B_L,      "L*",     "B: length", df_modBC),
-  get_row(full_C_L,      "L*",     "C: area",   df_modBC),
-  get_row(full_A_a,      "a*",     "A: age",    df_modA),
-  get_row(full_B_a,      "a*",     "B: length", df_modBC),
-  get_row(full_C_a,      "a*",     "C: area",   df_modBC),
-  get_row(full_A_b,      "b*",     "A: age",    df_modA),
-  get_row(full_B_b,      "b*",     "B: length", df_modBC),
-  get_row(full_C_b,      "b*",     "C: area",   df_modBC),
-  get_row(full_A_chroma, "chroma", "A: age",    df_modA),
-  get_row(full_B_chroma, "chroma", "B: length", df_modBC),
-  get_row(full_C_chroma, "chroma", "B: area",   df_modBC),
+  get_row(full_A_L,      "L*",     "A: age",                df_modA),
+  get_row(full_B_L,      "L*",     "B: length",             df_modBCD),
+  get_row(full_C_L,      "L*",     "C: area",               df_modBCD),
+  get_row(full_D_L,      "L*",     "D: condition_factor",   df_modBCD),
+  get_row(full_A_a,      "a*",     "A: age",                df_modA),
+  get_row(full_B_a,      "a*",     "B: length",             df_modBCD),
+  get_row(full_C_a,      "a*",     "C: area",               df_modBCD),
+  get_row(full_D_a,      "a*",     "D: condition_factor",   df_modBCD),
+  get_row(full_A_b,      "b*",     "A: age",                df_modA),
+  get_row(full_B_b,      "b*",     "B: length",             df_modBCD),
+  get_row(full_C_b,      "b*",     "C: area",               df_modBCD),
+  get_row(full_D_b,      "b*",     "D: condition_factor",   df_modBCD),
+  get_row(full_A_chroma, "chroma", "A: age",                df_modA),
+  get_row(full_B_chroma, "chroma", "B: length",             df_modBCD),
+  get_row(full_C_chroma, "chroma", "C: area",               df_modBCD),
+  get_row(full_D_chroma, "chroma", "D: condition_factor",   df_modBCD)
 )
 
 print(comparison_table, row.names = FALSE)
@@ -1385,10 +1497,10 @@ lrt_sequential <- function(mods, response) {
 }
 
 lrt_all <- bind_rows(
-  lrt_sequential(models_L, "Lightness"),
-  lrt_sequential(models_a, "a*"),
-  lrt_sequential(models_b, "b*"),
-  lrt_sequential(models_chroma, "chroma")
+  lrt_sequential(weighted_L, "Lightness"),
+  lrt_sequential(weighted_a, "a*"),
+  lrt_sequential(weighted_b, "b*"),
+  lrt_sequential(weighted_chroma, "chroma")
 )
 
 for (resp in c("L*", "a*", "b*", "chroma")) {    
@@ -1407,7 +1519,7 @@ for (lst in list(list(weighted_L, "Lightness"),
                  list(weighted_chroma, "chroma"))) {
   mod <- lst[[1]]; response <- lst[[2]]
 
-  cat(sprintf("\n=== %s ===\n", response))
+  cat(sprintf("\n %s \n", response))
   print(summary(mod))
 
   # Per-group residual SDs
@@ -1568,24 +1680,7 @@ ggsave(here("figures", "p_emm_age.png"), plot = p_emm_age, dpi = 300, width = 12
 
 ## script 06: Now that we have full models - create swatches based on EMM values
 
-# Extract EMMs from fitted weighted models 
-
-emm_sec_vals <- bind_rows(
-  emmeans(weighted_L, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "lightness", level_var = "section_coverage"),
-  emmeans(weighted_a, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "a", level_var = "section_coverage"),
-  emmeans(weighted_b, specs = "section_coverage") |> as.data.frame() |> mutate(metric = "b", level_var = "section_coverage"),
-) |> rename(level = section_coverage)
-
-emm_age_vals <- bind_rows(
-  emmeans(weighted_L, specs = "age") |> as.data.frame() |> mutate(metric = "lightness", level_var = "age"),
-  emmeans(weighted_a, specs = "age") |> as.data.frame() |> mutate(metric = "a", level_var = "age"),
-  emmeans(weighted_b, specs = "age") |> as.data.frame() |> mutate(metric = "b", level_var = "age"),
-  emmeans(weighted_chroma, specs = "age") |> as.data.frame() |> mutate(metric = "chroma", level_var = "age")
-) |> rename(level = age)
-
-emm_all <- bind_rows(emm_sec_vals, emm_age_vals)
-
-# Pivot wide so each row = one scenario with L, a, b 
+# Pivot emm_all from full weighted models so that each row = one scenario with L, a, b 
 
 emm_wide <- emm_all |>
   filter(metric %in% c("lightness", "a", "b")) |>
