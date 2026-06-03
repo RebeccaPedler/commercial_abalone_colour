@@ -29,7 +29,7 @@ library(farver)
 
 ### LOAD & CLEAN DATA
 getwd()
-df_raw <- read.csv("lip_colour_commercial.csv")
+df_raw <- read.csv(here("data", "lip_colour_commercial.csv"))
 
 # Define column names
 names(df_raw) <- c("image_id","date","farm","section","tank", "abalone_number",
