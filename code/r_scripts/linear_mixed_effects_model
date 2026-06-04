@@ -1420,14 +1420,11 @@ p_swatches <- ggplot(emm_wide,
     plot.title       = element_text(size = 16, face = "bold"),
     plot.subtitle    = element_text(size = 16,  colour = "grey40"),
     plot.caption     = element_text(size = 16,  colour = "grey55", face = "italic"),
-    panel.spacing    = unit(2, "lines"),
-    plot.background  = element_rect(fill = "#F8F6F2", colour = NA),  
-    panel.background = element_rect(fill = "#F8F6F2", colour = NA),  
-    strip.background = element_rect(fill = "#F8F6F2", colour = NA)   
+    panel.spacing    = unit(2, "lines")
   )
 
 print(p_swatches)
-ggsave(here("figures", "plot_emm_colour_swatches.png"), plot = p_swatches, width = 10, height = 4, dpi = 300, bg = "#F8F6F2")
+ggsave(here("figures", "plot_emm_colour_swatches.png"), plot = p_swatches, width = 15, height = 10, dpi = 300, bg = "#F8F6F2")
 
 # Script 06: Size metrics — collinearity with age + LMM comparison (age vs length vs area vs condition factor)
 
@@ -1733,4 +1730,3 @@ comparison_table <- bind_rows(
 
 print(comparison_table, row.names = FALSE)
 
-write.csv(comparison_table, "model_comparison_age_vs_length.csv", row.names = FALSE)
