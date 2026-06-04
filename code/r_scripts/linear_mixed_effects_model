@@ -1329,28 +1329,20 @@ emm_plot <- function(emm_df, x_lab) {
     )
 }
 
-emm_sec <- bind_rows(
-  emm_data(weighted_L, "section_coverage", "Lightness"),          
-  emm_data(weighted_a, "section_coverage", "a* (green - red)"),   
-  emm_data(weighted_b, "section_coverage", "b* (blue - yellow)")   
-) |>
-  mutate(response = factor(response, levels = c("Lightness", "a* (green - red)", "b* (blue - yellow)")))
-
-emm_age <- bind_rows(
-  emm_data(weighted_L, "age", "Lightness"),                       
-  emm_data(weighted_a, "age", "a* (green - red)"),                 
-  emm_data(weighted_b, "age", "b* (blue - yellow)")                
-) |>
-  mutate(response = factor(response, levels = c("Lightness", "a* (green - red)", "b* (blue - yellow)")))
-
-p_emm_sec <- emm_plot(emm_sec, "Section coverage")
-p_emm_age <- emm_plot(emm_age, "Age (months)")
+p_emm_sec <- emm_plot(emm_sec, "Section coverage") + ggtitle("A)") + 
+    theme(plot.title = element_text(face = "bold"),
+    axis.title.x = element_text(margin = margin(t = 15)),
+    axis.title.y = element_text(margin = margin(r = 15)))
+p_emm_age <- emm_plot(emm_age, "Age (months)") + ggtitle("B)") + 
+    theme(plot.title = element_text(face = "bold"),
+    axis.title.x = element_text(margin = margin(t = 15)),
+    axis.title.y = element_text(margin = margin(r = 15)))
 
 print(p_emm_sec)
 print(p_emm_age)
 
-ggsave(here("figures", "p_emm_sec.png"), plot = p_emm_sec, dpi = 300, width = 12, height = 7, units = "in") 
-ggsave(here("figures", "p_emm_age.png"), plot = p_emm_age, dpi = 300, width = 12, height = 7, units = "in")
+ggsave(here("figures", "p_emm_sec.png"), plot = p_emm_sec, dpi = 300, width = 10, height = 6, units = "in") 
+ggsave(here("figures", "p_emm_sec.png"), plot = p_emm_sec, dpi = 300, width = 10, height = 6, units = "in") 
 
 ## script 06: Now that we have full models - create swatches based on EMM values
 
