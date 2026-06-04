@@ -94,26 +94,26 @@ if (nrow(dupes) > 0) {
 }
 
 # Check ranges for CIELAB values and length
-cat(sprintf("  L*: min=%.2f, max=%.2f\n",
-            min(df$lightness, na.rm=TRUE), max(df$lightness, na.rm=TRUE))) # should be (0 - 100)
-cat(sprintf("  a*: min=%.2f, max=%.2f\n",
-            min(df$a, na.rm=TRUE), max(df$a, na.rm=TRUE))) # should be (-128 - 128)
-cat(sprintf("  b*: min=%.2f, max=%.2f\n",
-            min(df$b, na.rm=TRUE), max(df$b, na.rm=TRUE))) # should be (-128 - 128)
+cat(sprintf("  L*: min=%.2f, max=%.2f, median=%.2f\n",
+            min(df$lightness, na.rm=TRUE), max(df$lightness, na.rm=TRUE), median(df$lightness, na.rm=TRUE))) # should be (0 - 100)
+cat(sprintf("  a*: min=%.2f, max=%.2f, median=%.2f\n",
+            min(df$a, na.rm=TRUE), max(df$a, na.rm=TRUE), median(df$a, na.rm=TRUE))) 
+cat(sprintf("  b*: min=%.2f, max=%.2f, median=%.2f\n",
+            min(df$b, na.rm=TRUE), max(df$b, na.rm=TRUE), median(df$b, na.rm=TRUE)))
 
 # Summary data for abalone morphometrics
 df_no_length_zero <- df_raw |> filter(length_mm != 0)
 
-cat(sprintf("  length_mm*: min=%.2f, max=%.2f\n, average=%.2f\n",
-            min(df_no_length_zero$length_mm, na.rm=TRUE), max(df_no_length_zero$length_mm, na.rm=TRUE), mean(df_no_length_zero$length_mm, na.rm=TRUE)))
+cat(sprintf("  length_mm*: min=%.2f, max=%.2f, median=%.2f\n",
+            min(df_no_length_zero$length_mm, na.rm=TRUE), max(df_no_length_zero$length_mm, na.rm=TRUE), median(df_no_length_zero$length_mm, na.rm=TRUE)))
 
-cat(sprintf("  width_mm*: min=%.2f, max=%.2f\n, average=%.2f\n",
-            min(df_no_length_zero$width_mm, na.rm=TRUE), max(df_no_length_zero$width_mm, na.rm=TRUE), mean(df_no_length_zero$width_mm, na.rm=TRUE)))
+cat(sprintf("  width_mm*: min=%.2f, max=%.2f, median=%.2f\n",
+            min(df_no_length_zero$width_mm, na.rm=TRUE), max(df_no_length_zero$width_mm, na.rm=TRUE), median(df_no_length_zero$width_mm, na.rm=TRUE)))
 
-cat(sprintf("  area_mm2*: min=%.2f, max=%.2f\n, average=%.2f\n",
-            min(df_no_length_zero$area_mm2, na.rm=TRUE), max(df_no_length_zero$area_mm2, na.rm=TRUE), mean(df_no_length_zero$area_mm2, na.rm=TRUE)))
+cat(sprintf("  area_mm2*: min=%.2f, max=%.2f, median=%.2f\n",
+            min(df_no_length_zero$area_mm2, na.rm=TRUE), max(df_no_length_zero$area_mm2, na.rm=TRUE), median(df_no_length_zero$area_mm2, na.rm=TRUE)))
 
-cat(sprintf("  condition_factor*: min=%.2f, max=%.2f\n, average=%.2f\n",
+cat(sprintf("  condition_factor*: min=%.2f, max=%.2f, average=%.2f\n",
             min(df_no_length_zero$condition_factor, na.rm=TRUE), max(df_no_length_zero$condition_factor, na.rm=TRUE), mean(df_no_length_zero$condition_factor, na.rm=TRUE)))
 
 # Flag any L* outside valid range (if nothing is returned, there are no outliers)
