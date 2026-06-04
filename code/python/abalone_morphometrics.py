@@ -57,11 +57,6 @@ def find_divider_x(img_bgr):
 # ===========================================================================
 # 2.  SCALE CALIBRATION — via ColourChecker detection library
 # ===========================================================================
-#
-# Uses the colour_checker_detection library to locate the Calibrite
-# ColorChecker Classic card and compute px/mm from its patch spacing.
-# Each patch is PATCH_SIZE_MM mm; the card has N_PATCHES_LONG patches
-# along its long dimension.  Tries all 4 rotations to handle flipped cards.
 
 PATCH_SIZE_MM  = 12.0   # physical size of one patch (mm)
 N_PATCHES_LONG = 6      # patches along the long card dimension
@@ -70,19 +65,7 @@ N_PATCHES_LONG = 6      # patches along the long card dimension
 def pixels_per_mm(img_bgr, divider_x=None,
                   ruler_real_mm=RULER_REAL_MM,
                   debug_dir=None, stem=""):
-    """
-    Return (px_per_mm, patch_centres) by directly measuring individual
-    ColorChecker patches in the left half of the image.
 
-    Targets five well-separated colours (yellow, cyan, magenta, green, orange)
-    and measures the bounding-box side length of each detected square patch.
-    Each patch is physically PATCH_SIZE_MM x PATCH_SIZE_MM.
-    Uses the median patch size to reject fragments or partial detections.
-
-    Returns (px_per_mm, quad_pts) where quad_pts is a (4,2) int32 array
-    enclosing all detected patch centres (for visualisation).
-    Raises ValueError if fewer than 2 patches are detected.
-    """
     h, w = img_bgr.shape[:2]
     left = img_bgr[:, :w // 2]   # card is always in the left half
 
@@ -162,22 +145,6 @@ def pixels_per_mm(img_bgr, divider_x=None,
 def segment_abalone(img_bgr, divider_x,
                     min_area_px=50_000,
                     debug_dir=None, stem=""):
-    """
-    Segment the abalone from the grey board on the right side of the divider.
-
-    Thresholds calibrated from ground-truth red annotations:
-      True abalone:  S mean=94,  V mean=75-84  (colourful, dark)
-      Nacre/water:   S mean=22,  V mean=120     (neutral grey, bright)
-
-    Two-pass approach:
-      Pass 1: High-confidence mask  (S>35) AND (V<110) AND (V>15)
-              Captures colourful shell/tissue, excludes white nacre and wet board.
-      Pass 2: Within the bounding region of Pass 1, apply a slightly wider
-              threshold to recover any shell edges missed by strict V<110.
-      Final:  Convex hull to remove water tendrils and irregular edges.
-
-    Returns (contour_full_coords, full_mask) or (None, None).
-    """
     h, w    = img_bgr.shape[:2]
     margin  = 80
     x_start = min(divider_x + margin, w - 1)
