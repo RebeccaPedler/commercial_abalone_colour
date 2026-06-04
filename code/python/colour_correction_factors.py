@@ -2,20 +2,6 @@
 """
 Script 06b: Generate per-image colour correction factors from ColorChecker cards
 =================================================================================
-Processes a folder of JPG images, detects the ColorChecker Classic card in each,
-and outputs a CSV of correction factors (slope + intercept per Lab channel).
-
-You then apply these to your data separately in R or Excel using:
-    L_corrected = L_slope * L_raw + L_intercept
-    a_corrected = a_slope * a_raw + a_intercept
-    b_corrected = b_slope * b_raw + b_intercept
-
-Usage:
-    python 06_correction_factors_only.py --images /path/to/jpgs --output correction_factors.csv
-
-Requirements:
-    pip install colour-science colour-checker-detection opencv-python numpy pandas
-"""
 
 import cv2
 import numpy as np
