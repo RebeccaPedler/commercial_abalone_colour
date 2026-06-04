@@ -1,42 +1,7 @@
 #!/usr/bin/env python3
 """
-abalone_morphometrics.py  –  v2.0
-===================================
-Batch-measures abalone from lightbox JPEG images.
+abalone_morphometrics.py 
 
-Setup / Installation
---------------------
-    pip install opencv-python numpy colour-science colour-checker-detection
-
-Pipeline
---------
-1.  Load JPEG (grey/white board background, Calibrite ColorChecker Classic,
-    thick black vertical divider strip, abalone on the right half).
-2.  Detect the black vertical divider strip to isolate the right-hand zone.
-3.  Detect the ColorChecker card using colour-checker-detection library and
-    compute px/mm from patch spacing (6 patches × 12 mm along long dimension).
-    Handles all 4 card orientations automatically.
-4.  Segment the abalone using HSV thresholds calibrated from ground-truth:
-      (V < 75) OR (S > 30), AND (V > 15)
-    -- abalone tissue is darker and more colourful than the neutral grey board.
-5.  Fit a minimum-area rotated bounding rectangle → length & width (mm).
-6.  Compute filled-contour area (mm²).
-7.  Save an annotated visualisation.
-8.  Append results to a CSV.
-
-Usage (Windows)
----------------
-python abalone_morphometrics.py ^
-    --images  "C:\\Users\\RebeccaPedler\\OneDrive - Yumbah\\Documents\\Images\\PROFILED\\Photos of Claude" ^
-    --output  "C:\\Users\\RebeccaPedler\\Documents\\abalone_measurements.csv" ^
-    --vis_dir "C:\\Users\\RebeccaPedler\\Documents\\abalone_annotated"
-
-Optional flags
---------------
---scale_mm      Real-world span of the ruler (mm).  Default = 123
---ext           Comma-separated extensions to glob.  Default = jpg,jpeg
---min_area_px   Min contour area (px2) to be an abalone.  Default = 50000
---debug         Also save intermediate mask images.
 """
 
 import argparse
