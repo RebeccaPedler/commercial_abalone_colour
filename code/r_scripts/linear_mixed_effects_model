@@ -1024,21 +1024,6 @@ diag_weighted(weighted_chroma, "chroma", "chroma")
 # COEFFICIENT COMPARISON: do fixed-effect estimates shift?
 
 # Extract lme co-efficients for plotting
-extract_lme_coefs <- function(mod, response) {
-  s <- summary(mod)$tTable
-  data.frame(
-    response   = response,
-    term       = rownames(s),
-    estimate   = round(s[, "Value"],    4),
-    se         = round(s[, "Std.Error"],4),
-    t          = round(s[, "t-value"],  3),
-    p          = round(s[, "p-value"],  4),
-    model      = "Weighted varIdent",
-    ci_lo      = round(s[, "Value"] - 1.96 * s[, "Std.Error"], 4),
-    ci_hi      = round(s[, "Value"] + 1.96 * s[, "Std.Error"], 4)
-  ) |> filter(term != "(Intercept)")
-}
-
 extract_lmer_coefs <- function(mod, response) {
   s <- as.data.frame(coef(summary(mod)))
   data.frame(
@@ -1078,8 +1063,7 @@ print(coef_compare |>
         arrange(response, term_clean, model),
       row.names = FALSE)
 
-## Shade cloth becomes significant for lightness, age remains non-significant
-# All other coefficients do not shift
+## Estimates shift slightly but significance does not change - results are robust
 
 # Print final data using weighted model
 for (lst in list(list(weighted_L, "Lightness"),
@@ -1501,7 +1485,7 @@ make_hist <- function(var, xlab, binwidth = NULL, x_limits = NULL, x_breaks = wa
 p_len  <- make_hist("length", "Length (mm)", x_limits = c(20, 180), x_breaks = seq(20, 180, 20)) + ggtitle("A)")
 p_wid  <- make_hist("width", "Width (mm)", x_limits = c(20, 140), x_breaks = seq(20, 140, 20)) + ggtitle("B)")
 p_area <- make_hist("area", "Area (mm²)", binwidth = 300, x_limits = c(0, 15000), x_breaks = seq(0, 15000, 2500)) + ggtitle("C)")
-P_condition_factor <- make_hist("condition_factor", "Conditition Factor", x_limits = c(0.7, 0.8), x_breaks = seq(0.7, 0.8, 0.05))
+p_condition_factor <- make_hist("condition_factor", "condition Factor", x_limits = c(0.7, 0.8), x_breaks = seq(0.7, 0.8, 0.05))
 
 # Patch plot
 p_size_hists <- (p_len / p_wid / p_area)
