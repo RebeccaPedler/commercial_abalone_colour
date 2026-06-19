@@ -1597,7 +1597,7 @@ full_B_chroma <- lme(chroma    ~ section_coverage + length_scaled,
                 weights = varIdent(form = ~ 1 | section_coverage),
                 data    = df_modBCD, method = "REML", control = ctrl)
 
-# Model C: section_coverage + length_scaled 
+# Model C: section_coverage + area_scaled
 
 full_C_L <- lme(lightness ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
