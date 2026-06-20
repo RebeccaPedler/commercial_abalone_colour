@@ -54,7 +54,7 @@ min[1]=0;
 max[1]=255;
 filter[1]="pass";
 min[2]=0;
-max[2]=120;
+max[2]=160;
 filter[2]="pass";
 for (i=0;i<3;i++){
   selectWindow(""+i);
