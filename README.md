@@ -49,6 +49,10 @@ Generates per-image colour correction factors from ColourChecker Classic referen
 
 Batch pipeline that derives shell morphometrics (length, width, and projected area) from raw field images using the ColourChecker card as a calibrated scale reference. Run from the command line against a folder of raw field images.
 
+### `code/python/segment_lips.py`
+
+This script uses a trained YOLO segmentation model across a folder of abalone images (including subfolders and raw CR3 files), extracting the lip region from each photo as a white-background cutout. For each image it saves a cutout, an optional green-tinted overlay for quality checking, and a summary CSV recording detection status and lip size.
+
 ### `code/r_scripts/linear_mixed_effects_model`
 
 Single R script implementing the full statistical analysis pipeline for the manuscript. 
