@@ -1772,3 +1772,134 @@ print(sensitivity_table, row.names = FALSE)
 
 ## Effects and significance hold up after removing images with correction values < 0.95, 0.90, and 0.85
 
+# Script 08: Splitting data by age cohort
+
+## NUMERIC SUMMARY — length and area, by age cohort
+df |>
+  filter(length != 0, !is.na(length)) |>
+  pivot_longer(c(length, area), names_to = "metric", values_to = "value") |>
+  group_by(metric, age) |>
+  summarise(n      = n(),
+            mean   = round(mean(value),   1),
+            sd     = round(sd(value),     1),
+            median = round(median(value), 1),
+            min    = round(min(value),    1),
+            max    = round(max(value),    1),
+            .groups = "drop") |>
+  arrange(metric, age) |>
+  as.data.frame() |>
+  print(row.names = FALSE)
+
+# Sample size and spread sufficient to run individual LMM
+
+## BUILD PER-COHORT MODELLING DATASETS
+# Both size predictors (length and area) are scaled within each cohort
+
+# Filter to age = 19 months
+df_19 <- df |>
+  filter(age == 19,
+         !is.na(section_coverage),
+         !is.na(b), !is.na(a), !is.na(lightness),
+         length != 0, lightness != 0) |>
+  mutate(
+    section_coverage = relevel(factor(section_coverage, ordered = FALSE), ref = "single"),
+    length_scaled    = scale(length)[, 1],
+    area_scaled      = scale(area)[, 1]
+  )
+
+# Filter to age = 31 months
+df_31 <- df |>
+  filter(age == 31,
+         !is.na(section_coverage),
+         !is.na(b), !is.na(a), !is.na(lightness),
+         length != 0, lightness != 0) |>
+  mutate(
+    section_coverage = relevel(factor(section_coverage, ordered = FALSE), ref = "single"),
+    length_scaled    = scale(length)[, 1],
+    area_scaled      = scale(area)[, 1]
+  )
+
+## SANITY CHECK: Are both levels of shade coverage available to permit use of varIdent?
+check_coverage <- function(data, label) {
+  cat(sprintf("\n--- %s ---\n", label))
+  data |>
+    distinct(tank, section_coverage) |>
+    count(section_coverage) |>
+    as.data.frame() |>
+    print(row.names = FALSE)
+  invisible(nlevels(droplevels(data$section_coverage)))
+}
+
+check_coverage(df_19, "Age 19 months")
+check_coverage(df_31, "Age 31 months")
+
+## RUN LMM
+
+# set CNTRL
+ctrl <- lmeControl(opt = "optim", maxIter = 200, msMaxIter = 200)
+
+# Create functions for fitting models
+fit_metric <- function(response, predictor, data) {
+  f <- as.formula(paste(response, "~ section_coverage +", predictor))
+  lme(f,
+      random  = ~ 1 | tank,
+      weights = varIdent(form = ~ 1 | section_coverage),
+      data    = data, method = "REML", control = ctrl)
+}
+
+fit_cohort <- function(data, predictor) {
+  list(
+    L      = fit_metric("lightness", predictor, data),
+    a      = fit_metric("a",         predictor, data),
+    b      = fit_metric("b",         predictor, data),
+    chroma = fit_metric("chroma",    predictor, data)
+  )
+}
+
+# Fit models — both size metrics in both cohorts
+mods_19_length <- fit_cohort(df_19, "length_scaled")
+mods_31_length <- fit_cohort(df_31, "length_scaled")
+mods_19_area   <- fit_cohort(df_19, "area_scaled")
+mods_31_area   <- fit_cohort(df_31, "area_scaled")
+
+## MODEL SUMMARIES
+summarise_cohort <- function(mods, cohort, size_metric) {
+  bind_rows(lapply(names(mods), function(m) {
+    mod <- mods[[m]]
+    tt  <- summary(mod)$tTable
+    r2  <- performance::r2(mod)
+    data.frame(
+      cohort      = cohort,
+      size_metric = size_metric,
+      response    = m,
+      term        = rownames(tt),
+      estimate    = round(tt[, "Value"],     3),
+      se          = round(tt[, "Std.Error"], 3),
+      p           = round(tt[, "p-value"],   4),
+      R2_marg     = round(r2$R2_marginal,    3),
+      R2_cond     = round(r2$R2_conditional, 3),
+      row.names = NULL
+    ) |>
+      filter(term != "(Intercept)")
+  }))
+}
+
+# Create summary tables
+summary_table_size <- bind_rows(
+  summarise_cohort(mods_19_length, "Age 19", "length"),
+  summarise_cohort(mods_31_length, "Age 31", "length"),
+  summarise_cohort(mods_19_area,   "Age 19", "area"),
+  summarise_cohort(mods_31_area,   "Age 31", "area")
+) |>
+  mutate(
+    term = dplyr::recode(term,
+                         "section_coveragedouble" = "Coverage: double vs single"),
+    term = ifelse(grepl("_scaled$", term), "Size (per SD)", term),
+    sig  = case_when(p < 0.001 ~ "***", p < 0.01 ~ "**",
+                     p < 0.05  ~ "*",   p < 0.1  ~ ".", TRUE ~ "ns")
+  ) |>
+  arrange(size_metric, cohort, response, term)
+
+# Print results
+print(summary_table_size, row.names = FALSE)
+
