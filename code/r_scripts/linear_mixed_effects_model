@@ -25,18 +25,15 @@ library(ggpubr)
 library(ggcorrplot)
 library(farver)
 
+# Output directory for all figures
+fig_dir <- "C:/Users/RebeccaPedler/OneDrive - Yumbah/lip_colour_figures"
+
 # Script 01: Data structuring, factor setup, and inspection
 
 ### LOAD & CLEAN DATA
-getwd()
-df_raw <- read.csv(here("data", "lip_colour_commercial.csv"))
+setwd("C:/Users/RebeccaPedler/OneDrive - Yumbah/Documents/R&D/Industry PhD/Trials/Commercial trial/R_datasets")
+df_raw <- read.csv("lip_colour_commercial.csv")
 
-# Define column names
-names(df_raw) <- c("image_id","date","farm","section","tank", "abalone_number",
-                   "age", "diet", "section_coverage", "length_mm","width_mm","area_mm2","weight_g", "condition_factor",
-                   "lightness", "a","b","hue","saturation","brightness", "L_slope",
-                   "L_intercept","L_r2","a_slope","a_intercept","a_r2","b_slope",
-                   "b_intercept","b_r2","lightess_corrected","a_corrected","b_corrected","chroma")
 nrow(df_raw)
 str(df_raw)
 
@@ -51,10 +48,10 @@ names(df_raw)[names(df_raw) == "b_corrected"] <- "b"
 
 df_raw <- df_raw |>
   mutate(across(where(is.character), str_trim)) |>
-  filter(!is.na(farm))
-
-df_raw <- df_raw |> filter(!is.na(section_coverage)) # Delete NA
-df_raw <- df_raw |> filter(!(lightness == 0 & a == 0 & b == 0)) # Delete zero CIELAB rows
+  filter(!is.na(farm)) |>
+  filter(lightness != "#N/A") |>
+  filter(raw_lightness != 0) |>
+  filter(lightness != 0) 
 
 # Correct data types
 df <- df_raw |>
@@ -77,7 +74,6 @@ df <- df_raw |>
     length           = as.numeric(length_mm),
     width            = as.numeric(width_mm),
     area             = as.numeric(area_mm2),
-    condition_factor = as.numeric(condition_factor),
 
     abalone_id = paste(tank, abalone_number, sep = "_")
   )
@@ -112,9 +108,6 @@ cat(sprintf("  width_mm*: min=%.2f, max=%.2f, median=%.2f\n",
 
 cat(sprintf("  area_mm2*: min=%.2f, max=%.2f, median=%.2f\n",
             min(df_no_length_zero$area_mm2, na.rm=TRUE), max(df_no_length_zero$area_mm2, na.rm=TRUE), median(df_no_length_zero$area_mm2, na.rm=TRUE)))
-
-cat(sprintf("  condition_factor*: min=%.2f, max=%.2f, average=%.2f\n",
-            min(df_no_length_zero$condition_factor, na.rm=TRUE), max(df_no_length_zero$condition_factor, na.rm=TRUE), mean(df_no_length_zero$condition_factor, na.rm=TRUE)))
 
 # Flag any L* outside valid range (if nothing is returned, there are no outliers)
 invalid_L <- df |> filter(lightness < 0 | lightness > 100)
@@ -214,12 +207,12 @@ p_hist_all <- (p_L + ggtitle("A)") +
 
 print(p_hist_all)
 
-ggsave(here("figures", "p_hist_all.png"), plot = p_hist_all, dpi = 300, width = 12, height = 8, units = "in")
+ggsave(file.path(fig_dir, "p_hist_all.png"), plot = p_hist_all, dpi = 300, width = 12, height = 8, units = "in")
 
 # Print chroma 
 print(p_chroma)
 
-ggsave(here("figures", "p_chroma.png"), plot = p_chroma, dpi = 300, width = 8, height = 8, units = "in")
+ggsave(file.path(fig_dir, "p_chroma.png"), plot = p_chroma, dpi = 300, width = 8, height = 8, units = "in")
 
 ## Inspect section_coverage (single or double shade cloth)
 
@@ -253,7 +246,7 @@ p_sec_hist <- df |>
 
 # Print plot
 print(p_sec_hist)
-ggsave(here("figures", "p_sec_hist.png"), plot = p_sec_hist, dpi = 300, width = 12, height = 8, units = "in")
+ggsave(file.path(fig_dir, "p_sec_hist.png"), plot = p_sec_hist, dpi = 300, width = 12, height = 8, units = "in")
 
 # Boxplots by section_coverage (no age)
 p_sec_box <- df |>
@@ -276,7 +269,7 @@ p_sec_box <- df |>
 
 # Print plot
 print(p_sec_box)
-ggsave(here("figures", "p_sec_box.png"), plot = p_sec_box, dpi = 300, width = 12, height = 8, units = "in")
+ggsave(file.path(fig_dir, "p_sec_box.png"), plot = p_sec_box, dpi = 300, width = 12, height = 8, units = "in")
 
 ## Inspect section_coverage (single or double shade cloth) X age (19 and 31)
 
@@ -301,7 +294,7 @@ p_sec_age_box <- df |>
         plot.subtitle = element_text(size = 10, colour = "grey40"))
 
 print(p_sec_age_box)
-ggsave(here("figures", "p_sec_age_box.png"), plot = p_sec_age_box, dpi = 300, width = 12, height = 8, units = "in")
+ggsave(file.path(fig_dir, "p_sec_age_box.png"), plot = p_sec_age_box, dpi = 300, width = 12, height = 8, units = "in")
 
 # Histograms: section_coverage × age
 p_sec_age_hist <- df |>
@@ -324,7 +317,7 @@ p_sec_age_hist <- df |>
 
 # Print plot
 print(p_sec_age_hist)
-ggsave(here("figures", "p_sec_age_hist.png"), plot = p_sec_age_hist, dpi = 300, width = 12, height = 8, units = "in")
+ggsave(file.path(fig_dir, "p_sec_age_hist.png"), plot = p_sec_age_hist, dpi = 300, width = 12, height = 8, units = "in")
 
 # Create numeric summaries
 # By section coverage
@@ -417,7 +410,7 @@ p_tile <- tank_df |>
 print(p_tile)
 
 # Save plots
-ggsave(here("figures", "p_tile.png"), plot = p_tile, width = 8, height = 8, dpi = 300)
+ggsave(file.path(fig_dir, "p_tile.png"), plot = p_tile, width = 8, height = 8, dpi = 300)
 
 ## PAIRWISE CROSSTABS WITH CRAMER'S V
 
@@ -512,7 +505,7 @@ CIELAB_correlation_p <- ggcorrplot(cor_r,
         plot.background = element_rect(fill = "white", colour = NA))
  
 print(CIELAB_correlation_p)
-ggsave(here("figures", "CIELAB_correlation_p.png"), CIELAB_correlation_p, width = 10, height = 10, dpi = 300)
+ggsave(file.path(fig_dir, "CIELAB_correlation_p.png"), CIELAB_correlation_p, width = 10, height = 10, dpi = 300)
 
 ### Script 03: Linear Mixed Models — b*, L*, a* ~ section_coverage + age + diet
 
@@ -789,7 +782,7 @@ run_diagnostics <- function(mod, label, resp, data = df_mod) {
     )
 
   print(panel)
-  ggsave(sprintf("plot_diagnostics_%s.png", resp),
+  ggsave(file.path(fig_dir, sprintf("plot_diagnostics_%s.png", resp)),
          panel, width = 16, height = 4, dpi = 300)
   cat(sprintf("\n  Saved: plot_diagnostics_%s.png\n", resp))
 
@@ -1010,7 +1003,7 @@ diag_weighted <- function(wtd_mod, label, resp, data = df_mod) {
     )
 
   print(panel)
-  ggsave(sprintf("plot_diagnostics_weighted_%s.png", resp),
+  ggsave(file.path(fig_dir, sprintf("plot_diagnostics_weighted_%s.png", resp)),
          panel, width = 16, height = 4, dpi = 300)
   cat(sprintf("  Saved: plot_diagnostics_weighted_%s.png\n", resp))
 }
@@ -1290,7 +1283,7 @@ p_forest <- ggplot(coef_df,
   )
 
 print(p_forest)
-ggsave(here("figures", "p_forest.png"), plot = p_forest, dpi = 300, width = 12, height = 7, units = "in")
+ggsave(file.path(fig_dir, "p_forest.png"), plot = p_forest, dpi = 300, width = 12, height = 7, units = "in")
 
 ## EMM plots
 
@@ -1329,6 +1322,19 @@ emm_plot <- function(emm_df, x_lab) {
     )
 }
 
+# Build the EMM dataframes the plots expect (one row per response × level)
+emm_sec <- bind_rows(
+  emm_data(weighted_L, "section_coverage", "Lightness"),
+  emm_data(weighted_a, "section_coverage", "a* (green - red)"),
+  emm_data(weighted_b, "section_coverage", "b* (blue - yellow)")
+)
+
+emm_age <- bind_rows(
+  emm_data(weighted_L, "age", "Lightness"),
+  emm_data(weighted_a, "age", "a* (green - red)"),
+  emm_data(weighted_b, "age", "b* (blue - yellow)")
+)
+
 p_emm_sec <- emm_plot(emm_sec, "Section coverage") + ggtitle("A)") + 
     theme(plot.title = element_text(face = "bold"),
     axis.title.x = element_text(margin = margin(t = 15)),
@@ -1341,8 +1347,8 @@ p_emm_age <- emm_plot(emm_age, "Age (months)") + ggtitle("B)") +
 print(p_emm_sec)
 print(p_emm_age)
 
-ggsave(here("figures", "p_emm_sec.png"), plot = p_emm_sec, dpi = 300, width = 10, height = 6, units = "in") 
-ggsave(here("figures", "p_emm_sec.png"), plot = p_emm_sec, dpi = 300, width = 10, height = 6, units = "in") 
+ggsave(file.path(fig_dir, "p_emm_sec.png"), plot = p_emm_sec, dpi = 300, width = 10, height = 6, units = "in") 
+ggsave(file.path(fig_dir, "p_emm_age.png"), plot = p_emm_age, dpi = 300, width = 10, height = 6, units = "in") 
 
 ## script 06: Now that we have full models - create swatches based on EMM values
 
@@ -1416,9 +1422,9 @@ p_swatches <- ggplot(emm_wide,
   )
 
 print(p_swatches)
-ggsave(here("figures", "plot_emm_colour_swatches.png"), plot = p_swatches, width = 15, height = 10, dpi = 300, bg = "#F8F6F2")
+ggsave(file.path(fig_dir, "plot_emm_colour_swatches.png"), plot = p_swatches, width = 15, height = 10, dpi = 300, bg = "#F8F6F2")
 
-# Script 06: Size metrics — collinearity with age + LMM comparison (age vs length vs area vs condition factor)
+# Script 06: Size metrics — collinearity with age + LMM comparison (age vs length vs area)
 
 ctrl <- lmeControl(opt = "optim", maxIter = 200, msMaxIter = 200)
 
@@ -1474,22 +1480,18 @@ make_hist <- function(var, xlab, binwidth = NULL, x_limits = NULL, x_breaks = wa
 p_len  <- make_hist("length", "Length (mm)", x_limits = c(20, 180), x_breaks = seq(20, 180, 20)) + ggtitle("A)")
 p_wid  <- make_hist("width", "Width (mm)", x_limits = c(20, 140), x_breaks = seq(20, 140, 20)) + ggtitle("B)")
 p_area <- make_hist("area", "Area (mm²)", binwidth = 300, x_limits = c(0, 15000), x_breaks = seq(0, 15000, 2500)) + ggtitle("C)")
-p_condition_factor <- make_hist("condition_factor", "condition Factor", x_limits = c(0.7, 0.8), x_breaks = seq(0.7, 0.8, 0.05))
 
 # Patch plot
 p_size_hists <- (p_len / p_wid / p_area)
 
 print(p_size_hists)
-ggsave(here("figures", "plot_size_histograms_by_yc.png"), p_size_hists, width = 9, height = 10, dpi = 300)
-
-# Inspect condition_factor individually
-P_condition_factor
+ggsave(file.path(fig_dir, "plot_size_histograms_by_yc.png"), p_size_hists, width = 9, height = 10, dpi = 300)
 
 ### COLLINEARITY: size metrics × each other × age
 
 # Prepare data
 size_df <- df |>
-  dplyr::select(age_num, length, area, width, condition_factor) |>
+  dplyr::select(age_num, length, area, width) |>
   tidyr::drop_na()
  
 # Pearson correlation + p-values
@@ -1521,7 +1523,7 @@ size_correlation_p <- ggcorrplot(cor_r_size,
         plot.background = element_rect(fill = "white", colour = NA))
  
 print(size_correlation_p)
-ggsave(here("figures", "size_correlation_p.png"), size_correlation_p, width = 10, height = 10, dpi = 300)
+ggsave(file.path(fig_dir, "size_correlation_p.png"), size_correlation_p, width = 10, height = 10, dpi = 300)
 
 ### MODELLING DATASETS
 # Model A: section_coverage + age
@@ -1537,10 +1539,10 @@ df_modA <- df |>
     age              = relevel(age,               ref = "19")
   )
 
-# Model B&C&D: section_coverage + length_scaled OR area_scaled OR condition_factor
+# Model B&C: section_coverage + length_scaled OR area_scaled
 str(df)
 
-df_modBCD <- df |>
+df_modBC <- df |>
   filter(!is.na(section_coverage),
          !is.na(b), !is.na(a), !is.na(lightness),
          length != 0, lightness != 0) |>
@@ -1548,11 +1550,10 @@ df_modBCD <- df |>
     section_coverage        = factor(section_coverage, ordered = FALSE),
     section_coverage        = relevel(section_coverage, ref = "single"),
     length_scaled           = scale(length)[, 1],
-    area_scaled             = scale(area)[, 1],
-    condition_factor_scaled = scale(condition_factor)[, 1]
+    area_scaled             = scale(area)[, 1]
   )
 
-head(df_modBCD,30)
+head(df_modBC,30)
 
 # Model A: section_coverage + age
 
@@ -1581,64 +1582,42 @@ full_A_chroma <- lme(chroma    ~ section_coverage + age,
 full_B_L <- lme(lightness ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 full_B_a <- lme(a         ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 full_B_b <- lme(b         ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 full_B_chroma <- lme(chroma    ~ section_coverage + length_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 # Model C: section_coverage + area_scaled
 
 full_C_L <- lme(lightness ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 full_C_a <- lme(a         ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 full_C_b <- lme(b         ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 full_C_chroma <- lme(chroma    ~ section_coverage + area_scaled,
                 random  = ~ 1 | tank,
                 weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
-
-# Model D: section_coverage + condition_factor_scaled 
-
-full_D_L <- lme(lightness ~ section_coverage + condition_factor_scaled,
-                random  = ~ 1 | tank,
-                weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
-
-full_D_a <- lme(a         ~ section_coverage + condition_factor_scaled,
-                random  = ~ 1 | tank,
-                weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
-
-full_D_b <- lme(b         ~ section_coverage + condition_factor_scaled,
-                random  = ~ 1 | tank,
-                weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
-
-full_D_chroma <- lme(chroma    ~ section_coverage + condition_factor_scaled,
-                random  = ~ 1 | tank,
-                weights = varIdent(form = ~ 1 | section_coverage),
-                data    = df_modBCD, method = "REML", control = ctrl)
+                data    = df_modBC, method = "REML", control = ctrl)
 
 ### PRINT SUMMARIES
 
@@ -1672,10 +1651,6 @@ print_lme_summary(full_C_L,      "Model C — L*     | section_coverage + area_s
 print_lme_summary(full_C_a,      "Model C — a*     | section_coverage + area_scaled")
 print_lme_summary(full_C_b,      "Model C — b*     | section_coverage + area_scaled")
 print_lme_summary(full_C_chroma, "Model C — chroma | section_coverage + area_scaled")
-print_lme_summary(full_D_L,      "Model D — L*     | section_coverage + condition_factor_scaled")
-print_lme_summary(full_D_a,      "Model D — a*     | section_coverage + condition_factor_scaled")
-print_lme_summary(full_D_b,      "Model D — b*     | section_coverage + condition_factor_scaled")
-print_lme_summary(full_D_chroma, "Model D — chroma | section_coverage + condition_factor_scaled")
 
 ### COMPARISON TABLE
 
@@ -1703,22 +1678,97 @@ get_row <- function(mod, response, model_label, data) {
 
 comparison_table <- bind_rows(
   get_row(full_A_L,      "L*",     "A: age",                df_modA),
-  get_row(full_B_L,      "L*",     "B: length",             df_modBCD),
-  get_row(full_C_L,      "L*",     "C: area",               df_modBCD),
-  get_row(full_D_L,      "L*",     "D: condition_factor",   df_modBCD),
+  get_row(full_B_L,      "L*",     "B: length",             df_modBC),
+  get_row(full_C_L,      "L*",     "C: area",               df_modBC),
   get_row(full_A_a,      "a*",     "A: age",                df_modA),
-  get_row(full_B_a,      "a*",     "B: length",             df_modBCD),
-  get_row(full_C_a,      "a*",     "C: area",               df_modBCD),
-  get_row(full_D_a,      "a*",     "D: condition_factor",   df_modBCD),
+  get_row(full_B_a,      "a*",     "B: length",             df_modBC),
+  get_row(full_C_a,      "a*",     "C: area",               df_modBC),
   get_row(full_A_b,      "b*",     "A: age",                df_modA),
-  get_row(full_B_b,      "b*",     "B: length",             df_modBCD),
-  get_row(full_C_b,      "b*",     "C: area",               df_modBCD),
-  get_row(full_D_b,      "b*",     "D: condition_factor",   df_modBCD),
+  get_row(full_B_b,      "b*",     "B: length",             df_modBC),
+  get_row(full_C_b,      "b*",     "C: area",               df_modBC),
   get_row(full_A_chroma, "chroma", "A: age",                df_modA),
-  get_row(full_B_chroma, "chroma", "B: length",             df_modBCD),
-  get_row(full_C_chroma, "chroma", "C: area",               df_modBCD),
-  get_row(full_D_chroma, "chroma", "D: condition_factor",   df_modBCD)
+  get_row(full_B_chroma, "chroma", "B: length",             df_modBC),
+  get_row(full_C_chroma, "chroma", "C: area",               df_modBC),
 )
 
 print(comparison_table, row.names = FALSE)
+
+# Script 07: Sensitivity test to see if shade cloth and age effect hold up when removing images with calibration below threshold 
+
+# Map each r2 to its respective CIELAB column and define thresholds
+r2_cols <- c("L*" = "L_r2", "a*" = "a_r2", "b*" = "b_r2")  
+r2_thresholds <- c(0.95, 0.90, 0.80)
+
+# Script 07: Sensitivity test — does removing low-calibration (low R^2) images
+#            change the final model's effect sizes, significance or fit?
+
+ctrl <- lmeControl(opt = "optim", maxIter = 200, msMaxIter = 200)
+
+# --- Explicit filtered datasets (CIELAB rows kept only where calibration R^2 >= threshold) ---
+make_filtered <- function(data, r2col, threshold) {
+  v <- suppressWarnings(as.numeric(data[[r2col]]))
+  data[!is.na(v) & v >= threshold, ]
+}
+
+L_filtered <- make_filtered(df_mod, "L_r2", 0.90)   # e.g. lightness, R^2 >= 0.90
+a_filtered <- make_filtered(df_mod, "a_r2", 0.90)
+b_filtered <- make_filtered(df_mod, "b_r2", 0.90)
+# chroma derives from a* and b*, so require BOTH calibrations to pass
+chroma_filtered <- {
+  va <- suppressWarnings(as.numeric(df_mod$a_r2))
+  vb <- suppressWarnings(as.numeric(df_mod$b_r2))
+  df_mod[!is.na(va) & !is.na(vb) & va >= 0.90 & vb >= 0.90, ]
+}
+
+# --- Refit the FINAL weighted model on any subset ---
+fit_final <- function(response, data) {
+  lme(as.formula(paste(response, "~ section_coverage + age")),
+      random  = ~ 1 | tank,
+      weights = varIdent(form = ~ 1 | section_coverage),
+      data    = data, method = "REML", control = ctrl)
+}
+
+# --- Sweep thresholds and build the comparison table ---
+sens_spec <- list(
+  "L*"     = list(response = "lightness", r2 = "L_r2"),
+  "a*"     = list(response = "a",         r2 = "a_r2"),
+  "b*"     = list(response = "b",         r2 = "b_r2"),
+  "chroma" = list(response = "chroma",    r2 = c("a_r2", "b_r2"))
+)
+r2_thresholds <- c(0, 0.80, 0.90, 0.95)   # 0 = unfiltered baseline
+
+sensitivity_one <- function(label, spec, data = df_mod) {
+  do.call(rbind, lapply(r2_thresholds, function(thr) {
+    if (thr == 0) {
+      keep <- rep(TRUE, nrow(data))
+    } else {
+      keep <- Reduce(`&`, lapply(spec$r2, function(cc) {
+        v <- suppressWarnings(as.numeric(data[[cc]]))
+        !is.na(v) & v >= thr
+      }))
+    }
+    d  <- droplevels(data[keep, ])
+    m  <- fit_final(spec$response, d)
+    tt <- summary(m)$tTable
+    r2 <- performance::r2(m)
+    data.frame(
+      response       = label,
+      threshold      = if (thr == 0) "none" else sprintf("R2>=%.2f", thr),
+      n              = nrow(d),
+      n_dropped      = nrow(data) - nrow(d),
+      shade_est      = round(tt["section_coveragedouble", "Value"],   3),
+      shade_p        = round(tt["section_coveragedouble", "p-value"], 4),
+      age_est        = round(tt["age31", "Value"],   3),
+      age_p          = round(tt["age31", "p-value"], 4),
+      R2_marginal    = round(r2$R2_marginal,    3),
+      R2_conditional = round(r2$R2_conditional, 3)
+    )
+  }))
+}
+
+sensitivity_table <- do.call(rbind, Map(sensitivity_one, names(sens_spec), sens_spec))
+rownames(sensitivity_table) <- NULL
+print(sensitivity_table, row.names = FALSE)
+
+## Effects and significance hold up after removing images with correction values < 0.95, 0.90, and 0.85
 
