@@ -81,10 +81,10 @@ df <- df_raw |>
 ### CLEAN DATA 
 
 # Flag duplicate image IDs
-dupes <- df_raw |> filter(duplicated(image_id) | duplicated(image_id, fromLast = TRUE))
+dupes <- df_raw |> filter(duplicated(image_ID) | duplicated(image_ID, fromLast = TRUE))
 if (nrow(dupes) > 0) {
   cat("WARNING: Duplicate image IDs found:\n")
-  print(dupes[, c("image_id", "tank", "abalone_number", "length_mm")], row.names = FALSE)
+  print(dupes[, c("image_ID", "tank", "abalone_number", "length_mm")], row.names = FALSE)
 } else {
   cat("No duplicate image IDs.\n")
 }
@@ -113,7 +113,7 @@ cat(sprintf("  area_mm2*: min=%.2f, max=%.2f, median=%.2f\n",
 invalid_L <- df |> filter(lightness < 0 | lightness > 100)
 if (nrow(invalid_L) > 0) {
   cat("WARNING: Invalid L* values:\n")
-  print(invalid_L[, c("image_id", "tank", "lightness")], row.names = FALSE)
+  print(invalid_L[, c("image_ID", "tank", "lightness")], row.names = FALSE)
 }
 
 # Flag within-tank outliers (>3 SD ) 
@@ -128,7 +128,7 @@ flag_outliers <- function(data, var) {
     ) |>
     ungroup() |>
     filter(outlier) |>
-    dplyr::select(image_id, tank, diet, age, all_of(var), z_within)
+    dplyr::select(image_ID, tank, diet, age, all_of(var), z_within)
 }
 
 for (var in c("lightness", "a", "b")) {
