@@ -1,3 +1,9 @@
+# Project: What makes a green lip? Moderators of lip colour in farmed greenlip abalone (Haliotis laevigata Donovan)
+
+## Step 1: Colour calibration check
+
+# Install packages and load libraries
+
 ##  ColorChecker correction quality (r2) per metric
 
 r2_cols <- c("L*" = "L_r2", "a*" = "a_r2", "b*" = "b_r2")  # map each metric to its calibration r2 column 
