@@ -101,3 +101,5 @@ print(aggregate(cbind(L = bad_L, a = bad_a, b = bad_b) ~ tank, df, sum),
 # Per date
 print(aggregate(cbind(L = bad_L, a = bad_a, b = bad_b) ~ date, df, sum),
       row.names = FALSE)
+
+### END OF SCRIPT ###
