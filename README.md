@@ -53,9 +53,13 @@ Batch pipeline that derives shell morphometrics (length, width, and projected ar
 
 This script uses a trained YOLO segmentation model across a folder of abalone images (including subfolders and raw CR3 files), extracting the lip region from each photo as a white-background cutout. For each image it saves a cutout, an optional green-tinted overlay for quality checking, and a summary CSV recording detection status and lip size.
 
+### `code/r_scripts/colour_calibration_check`
+
+R script for checking colour calibration success of dataset after running colour_correction_factors.py 
+
 ### `code/r_scripts/linear_mixed_effects_model`
 
-Single R script implementing the full statistical analysis pipeline for the manuscript. 
+R script implementing the full statistical analysis pipeline for the manuscript. 
 
 ## Data
 
