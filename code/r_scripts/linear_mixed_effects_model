@@ -27,15 +27,13 @@ library(ggpubr)
 library(ggcorrplot)
 library(farver)
 
-# Output directory for all figures
-fig_dir <- "C:/Users/RebeccaPedler/OneDrive - Yumbah/lip_colour_figures"
+# Create directory to save all figures 
+fig_dir <- here::here("figures")
 
 # Script 01: Data structuring, factor setup, and inspection
 
 ### LOAD & CLEAN DATA
-setwd("C:/Users/RebeccaPedler/OneDrive - Yumbah/Documents/R&D/Industry PhD/Trials/Commercial trial/R_datasets")
-df_raw <- read.csv("lip_colour_commercial.csv")
-
+df_raw <- read.csv(here("data", "lip_colour_commercial.csv"))
 nrow(df_raw)
 str(df_raw)
 
