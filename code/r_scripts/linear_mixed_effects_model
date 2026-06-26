@@ -1,4 +1,6 @@
-# Abalone lip colour — commercial farm dataset
+# Project: What makes a green lip? Moderators of lip colour in farmed greenlip abalone (Haliotis laevigata Donovan)
+
+## Step 2: Running linear mixed effect models
 
 # Install packages and load libraries
 
@@ -1903,3 +1905,4 @@ summary_table_size <- bind_rows(
 # Print results
 print(summary_table_size, row.names = FALSE)
 
+### END OF SCRIPT ###
