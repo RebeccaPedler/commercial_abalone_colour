@@ -44,7 +44,6 @@ names(df_raw)[names(df_raw) == "b_corrected"] <- "b"
 
 df_raw <- df_raw |>
   mutate(across(where(is.character), str_trim)) |>
-  filter(!is.na(farm)) |>
   filter(lightness != "#N/A") |>
   filter(raw_lightness != 0) |>
   filter(lightness != 0) 
@@ -56,7 +55,6 @@ df <- df_raw |>
 
     # Unordered factors
     section_coverage = factor(section_coverage),
-    farm             = factor(farm),
     section          = factor(section),
     tank             = factor(tank),
     age              = factor(age, levels = c(19, 31)),
@@ -138,7 +136,7 @@ for (var in c("lightness", "a", "b")) {
 # Total number of observations
 nrow(df)
 
-factor_vars <- c("farm", "section", "age", "diet",
+factor_vars <- c("section", "age", "diet",
                  "section_coverage")
 
 for (v in factor_vars) {
@@ -356,7 +354,7 @@ df |>
 
 # Create separate dataframe to work on tank level
 tank_df <- df |>
-  distinct(tank, section_coverage, age, diet, farm, section)
+  distinct(tank, section_coverage, age, diet, section)
 
 ## CROSSTAB COUNTS (tank level)
 
@@ -511,7 +509,6 @@ df_mod <- df |>
   filter(!is.na(section_coverage), !is.na(age),
          !is.na(b), !is.na(a), !is.na(lightness)) |>
   mutate(
-    farm             = factor(farm, ordered = FALSE),
     section_coverage = factor(section_coverage, ordered = FALSE),
     diet             = factor(diet, ordered = FALSE),
     age              = factor(age, ordered = FALSE),
