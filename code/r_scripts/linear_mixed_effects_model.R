@@ -4,13 +4,11 @@
 
 # Install packages and load libraries
 
-install.packages(c("tidyverse", "ggplot2", "patchwork", "scales", "vcd", "lme4", "lmerTest", "emmeans", "performance", "car", "nlme", "ggpubr", "ggcorrplot", "farver"))
+install.packages(c("tidyverse", "ggplot2", "patchwork", "lme4", "lmerTest", "emmeans", "performance", "nlme", "ggcorrplot", "farver"))
 
 library(tidyverse)
 library(ggplot2)
 library(patchwork)
-library(scales)
-library(vcd)
 library(lme4)        
 library(lmerTest)    
 library(emmeans)     
@@ -20,10 +18,8 @@ library(tidyverse)
 library(lme4)
 library(lmerTest)
 library(emmeans)
-library(performance)
-library(car)       
+library(performance)    
 library(nlme)
-library(ggpubr)
 library(ggcorrplot)
 library(farver)
 
