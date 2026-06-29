@@ -4,13 +4,11 @@
 
 # Install packages and load libraries
 
-install.packages(c("tidyverse", "ggplot2", "patchwork", "scales", "vcd", "lme4", "lmerTest", "emmeans", "performance", "car", "nlme", "ggpubr", "ggcorrplot", "farver"))
+install.packages(c("tidyverse", "ggplot2", "patchwork", "lme4", "lmerTest", "emmeans", "performance", "nlme", "ggcorrplot", "farver"))
 
 library(tidyverse)
 library(ggplot2)
 library(patchwork)
-library(scales)
-library(vcd)
 library(lme4)        
 library(lmerTest)    
 library(emmeans)     
@@ -20,10 +18,8 @@ library(tidyverse)
 library(lme4)
 library(lmerTest)
 library(emmeans)
-library(performance)
-library(car)       
+library(performance)    
 library(nlme)
-library(ggpubr)
 library(ggcorrplot)
 library(farver)
 
@@ -1302,27 +1298,25 @@ ggsave(file.path(fig_dir, "p_forest.png"), plot = p_forest, dpi = 300, width = 1
 
 ## EMM plots
 
+resp_levels <- c("Lightness", "a* (green - red)", "b* (blue - yellow)")
+
 emm_data <- function(mod, term, response) {
   emmeans(mod, specs = term) |>
     as.data.frame() |>
-    mutate(response = response) |>
+    mutate(response = factor(response, levels = resp_levels)) |>
     rename(level = !!sym(term))
 }
-
-resp_cols <- c("Lightness"          = "#5B8FA8",
-               "a* (green - red)"   = "#7A9E5A",
-               "b* (blue - yellow)" = "#C4A24A")
 
 emm_plot <- function(emm_df, x_lab) {
   ggplot(emm_df,
          aes(x = level, y = emmean,
-             ymin = lower.CL, ymax = upper.CL,
-             colour = response)) +
-    geom_errorbar(width = 0.18, linewidth = 0.8,
-                  position = position_dodge(0.4)) +
-    geom_point(size = 3.2, position = position_dodge(0.4)) +
+             ymin = lower.CL, ymax = upper.CL)) +
+    geom_errorbar(width = 0.18, linewidth = 0.5,
+                  position = position_dodge(0.4),
+                  colour = "black") +
+    geom_point(size = 2.5, position = position_dodge(0.4),
+               colour = "black") +
     facet_wrap(~response, scales = "free_y", nrow = 1) +
-    scale_colour_manual(values = resp_cols, guide = "none") +
     labs(x = x_lab, y = "Estimated marginal mean (95% CI)") +
     theme_minimal(base_size = 12) +
     theme(
