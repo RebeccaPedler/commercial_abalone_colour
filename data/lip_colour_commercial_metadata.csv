@@ -1,8 +1,7 @@
 ﻿column,data_type,descriptor
 image_ID,Character,"Unique identifier for each image, assigned by camera at time of capture (e.g. IMG_1643). "
 date,Date,Date of image capture. All sampling conducted over three consecutive days in April 2024.
-farm,Categorical,Physical farm location at Yumbah Aquaculture's Port Lincoln site.
-section,Categorical,"Named section within the farm (e.g. Northern, Lillies, Bench). Each section contains multiple tanks sharing a common pump shed."
+section,Categorical,"Named section within the farm. Each section contains multiple tanks sharing a common pump shed."
 tank,Categorical,Individual grow-out tank identifier. Multiple abalone sampled per tank
 abalone_number,Ordinal,Sequential identifier of each abalone sampled within a tank. Used together with tank to construct a unique abalone_id.
 age,Categorical,Approximate age of abalone at time of sampling in months.
