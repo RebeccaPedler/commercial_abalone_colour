@@ -65,7 +65,7 @@ R script implementing the full statistical analysis pipeline for the manuscript.
 
 ### `data/lip_colour_commercial.csv`
 
-The primary analysis dataset. Contains 1,320 rows (one per abalone
+The primary analysis dataset. Contains 1,236 rows (one per abalone
 
 ### `data/lip_colour_commercial_metadata.csv`
 
