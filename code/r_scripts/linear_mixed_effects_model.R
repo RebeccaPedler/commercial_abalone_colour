@@ -1032,6 +1032,21 @@ extract_lmer_coefs <- function(mod, response) {
   ) |> filter(term != "(Intercept)")
 }
 
+extract_lme_coefs <- function(mod, response) {
+  s <- as.data.frame(summary(mod)$tTable)
+  data.frame(
+    response = response,
+    term     = rownames(s),
+    estimate = round(s$Value,       4),
+    se       = round(s$Std.Error,   4),
+    t        = round(s$`t-value`,   3),
+    p        = round(s$`p-value`,   4),
+    model    = "Weighted varIdent",
+    ci_lo    = round(s$Value - 1.96 * s$Std.Error, 4),
+    ci_hi    = round(s$Value + 1.96 * s$Std.Error, 4)
+  ) |> filter(term != "(Intercept)")
+}
+
 coef_compare <- bind_rows(
   extract_lmer_coefs(full_L, "Lightness"),
   extract_lme_coefs(weighted_L, "Lightness"),
