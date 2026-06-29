@@ -3,15 +3,15 @@
 ## Step 1: Colour calibration check
 
 # Install packages and load libraries
-install.packges("here")
+install.packages("here")
 library(here)
 
 # Script 01: Data structuring, factor setup, and inspection
 
 ### LOAD & CLEAN DATA
-df_raw <- read.csv(here("data", "lip_colour_commercial.csv"))
-nrow(df_raw)
-str(df_raw)
+df <- read.csv(here("data", "lip_colour_commercial.csv"))
+nrow(df)
+str(df)
 
 ##  ColorChecker correction quality (r2) per metric
 
