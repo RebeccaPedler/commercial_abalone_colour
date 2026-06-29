@@ -42,7 +42,7 @@ names(df_raw)[names(df_raw) == "lightness"] <- "raw_lightness"
 names(df_raw)[names(df_raw) == "a"] <- "raw_A"
 names(df_raw)[names(df_raw) == "b"] <- "raw_B"
 
-names(df_raw)[names(df_raw) == "lightess_corrected"] <- "lightness"
+names(df_raw)[names(df_raw) == "lightness_corrected"] <- "lightness"
 names(df_raw)[names(df_raw) == "a_corrected"] <- "a"
 names(df_raw)[names(df_raw) == "b_corrected"] <- "b"
 
