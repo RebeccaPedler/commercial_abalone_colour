@@ -4,7 +4,7 @@
 
 # Install packages and load libraries
 
-install.packages(c("tidyverse", "ggplot2", "patchwork", "lme4", "lmerTest", "emmeans", "performance", "nlme", "ggcorrplot", "farver"))
+install.packages(c("tidyverse", "ggplot2", "patchwork", "lme4", "lmerTest", "emmeans", "performance", "nlme", "ggcorrplot", "farver", "here"))
 
 library(tidyverse)
 library(ggplot2)
@@ -12,8 +12,7 @@ library(patchwork)
 library(lme4)        
 library(lmerTest)    
 library(emmeans)     
-library(performance) 
-library(car)  
+library(performance)  
 library(tidyverse)
 library(lme4)
 library(lmerTest)
@@ -22,6 +21,7 @@ library(performance)
 library(nlme)
 library(ggcorrplot)
 library(farver)
+library(here)
 
 # Create directory to save all figures 
 fig_dir <- here::here("figures")
