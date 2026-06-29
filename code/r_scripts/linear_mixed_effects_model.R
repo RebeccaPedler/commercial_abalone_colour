@@ -507,7 +507,7 @@ CIELAB_correlation_p <- ggcorrplot(cor_r,
 print(CIELAB_correlation_p)
 ggsave(file.path(fig_dir, "CIELAB_correlation_p.png"), CIELAB_correlation_p, width = 10, height = 10, dpi = 300)
 
-### Script 03: Linear Mixed Models — b*, L*, a* ~ section_coverage + age + diet
+### Script 03: Linear Mixed Models — b*, L*, a* ~ section_coverage + age
 
 ## PREPARE MODELLING DATASET
 
