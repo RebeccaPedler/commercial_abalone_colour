@@ -1,4 +1,4 @@
-image_ID,date,section,tank,abalone_number,age,diet,section_coverage,length_mm,width_mm,area_mm2,weight_g,lightness,a,b,L_slope,L_intercept,L_r2,a_slope,a_intercept,a_r2,b_slope,b_intercept,b_r2,lightess_corrected,a_corrected,b_corrected,chroma
+image_ID,date,section,tank,abalone_number,age,diet,section_coverage,length_mm,width_mm,area_mm2,weight_g,lightness,a,b,L_slope,L_intercept,L_r2,a_slope,a_intercept,a_r2,b_slope,b_intercept,b_r2,lightness_corrected,a_corrected,b_corrected,chroma
 IMG_1623,15/04/2024,section_N,section_n_1,1,19,1,single,0,0,0,0,20.9,-5.21,10,1.14688,26.04993,0.9871,1.24998,-3.6473,0.982,1.33495,-9.78425,0.9847,50.019722,-10.1596958,3.56525,10.76709925
 IMG_1624,15/04/2024,section_N,section_n_1,2,19,1,single,0,0,0,0,27.84,-8.94,12.65,1.12052,25.41113,0.9874,1.21165,-3.72655,0.982,1.29572,-9.89756,0.9852,56.6064068,-14.558701,6.493298,15.94110077
 IMG_1625,15/04/2024,section_N,section_n_1,3,19,1,single,0,0,0,0,20.97,-6.2,8.96,1.12734,25.62109,0.9871,1.22007,-3.84331,0.9821,1.3041,-9.84454,0.9848,49.2614098,-11.407744,1.840196,11.55521287
