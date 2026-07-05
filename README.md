@@ -12,19 +12,14 @@ Rebecca L. Pedler, Matthew S. Bansemer, James O. Harris, Ondi L. Crino
 
 This repository contains the full analytical pipeline used to quantify lip colour from images of farmed greenlip abalone. The study examines the effects of shade cloth coverage and abalone age on CIELAB lip colour metrics using linear mixed effects models.
 
-The pipeline runs in three stages:
+## Dependancies 
 
-1. **Colour metrics extraction** — ImageJ/Fiji macro applied to manually segmented lip images
-2. **Colour correction and morphometrics** — Python scripts applied to raw field images
-3. **Statistical modelling and visualisation** — R script implementing LMMs, model diagnostics, and figure generation
+Colour data was extracted using the pipeline detailed in [INSERT LINK TO GITHUB]
 
 ## Repository structure
 
 commercial_abalone_colour/
 ├── code/
-│   ├── python/
-│   │   ├── colour_correction_factors.py
-│   │   └── abalone_morphometrics.py
 │   └── r_scripts/
 │       └── linear_mixed_effects_model
 ├── data/
@@ -34,22 +29,6 @@ commercial_abalone_colour/
     └── *.png
 
 ## Code
-
-### `code/python/colour_correction_factors.py`
-
-Generates per-image colour correction factors from ColourChecker Classic reference cards (X-Rite) present in each field image. For each image, it detects the ColourChecker card using the `colour-checker-detection` library and outputs a per-image slope, intercept, and R² for each of the three CIELAB channels (L*, a*, b*). Run from the command line against a folder of raw field images.
-
-### `code/python/abalone_morphometrics.py`
-
-Batch pipeline that derives shell morphometrics (length, width, and projected area) from raw field images using the ColourChecker card as a calibrated scale reference. Run from the command line against a folder of raw field images.
-
-### `code/python/segment_lips.py`
-
-This script uses a trained YOLO segmentation model across a folder of abalone images (including subfolders and raw CR3 files), extracting the lip region from each photo as a white-background cutout. For each image it saves a cutout, an optional green-tinted overlay for quality checking, and a summary CSV recording detection status and lip size.
-
-### `code/r_scripts/colour_calibration_check`
-
-R script for checking colour calibration success of dataset after running colour_correction_factors.py 
 
 ### `code/r_scripts/linear_mixed_effects_model`
 
