@@ -20,8 +20,8 @@ Colour data was extracted using the pipeline detailed in [INSERT LINK TO GITHUB]
 
 commercial_abalone_colour/
 ├── code/
-│   └── r_scripts/
-│       └── linear_mixed_effects_model
+│       ├── colour_calibration_check.R
+│       └── linear_mixed_effects_model.R
 ├── data/
 │   ├── lip_colour_commercial.csv
 │   └── lip_colour_commercial_metadata.csv
@@ -30,7 +30,11 @@ commercial_abalone_colour/
 
 ## Code
 
-### `code/r_scripts/linear_mixed_effects_model`
+### `code/colour_calibration_check.R`
+
+R script used to check calibration of images.
+
+### `code/linear_mixed_effects_model.R`
 
 R script implementing the full statistical analysis pipeline for the manuscript. 
 
