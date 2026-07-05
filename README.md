@@ -22,8 +22,6 @@ The pipeline runs in three stages:
 
 commercial_abalone_colour/
 ├── code/
-│   ├── macro/
-│   │   └── whole_colour_components_abalone.ijm
 │   ├── python/
 │   │   ├── colour_correction_factors.py
 │   │   └── abalone_morphometrics.py
@@ -36,10 +34,6 @@ commercial_abalone_colour/
     └── *.png
 
 ## Code
-
-### `code/macro/whole_colour_components_abalone.ijm`
-
-ImageJ/Fiji macro that automates extraction of colour metrics from segmented abalone lip images. Adapted from Strock (2021); doi:10.5281/zenodo.5595203.
 
 ### `code/python/colour_correction_factors.py`
 
