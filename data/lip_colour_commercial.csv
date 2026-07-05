@@ -1,4 +1,4 @@
-image_ID,date,section,tank,abalone_number,age,diet,section_coverage,length_mm,width_mm,area_mm2,weight_g,lightness,a,b,L_slope,L_intercept,L_r2,a_slope,a_intercept,a_r2,b_slope,b_intercept,b_r2,lightess_corrected,a_corrected,b_corrected,chroma,delta_E
+image_ID,date,section,tank,abalone_number,age,diet,section_coverage,length_mm,width_mm,area_mm2,weight_g,lightness,a,b,L_slope,L_intercept,L_r2,a_slope,a_intercept,a_r2,b_slope,b_intercept,b_r2,lightness_corrected,a_corrected,b_corrected,chroma,delta_E
 IMG_1623,15/04/2024,section_N,section_n_1,1,19,1,single,0,0,0,0,20.9,-5.21,10,1.15,26.05,0.99,1.25,-2.09,0.98,1.25,2.11,0.99,50.02,-8.61,14.63,16.98,4.99
 IMG_1624,15/04/2024,section_N,section_n_1,2,19,1,single,0,0,0,0,27.84,-8.94,12.65,1.12,25.41,0.99,1.21,-2.17,0.98,1.22,2.01,0.99,56.61,-13.02,17.38,21.71,4.88
 IMG_1625,15/04/2024,section_N,section_n_1,3,19,1,single,0,0,0,0,20.97,-6.2,8.96,1.13,25.62,0.99,1.22,-2.29,0.98,1.22,2.06,0.99,49.26,-9.86,13.02,16.33,4.91
