@@ -46,7 +46,8 @@ df_raw <- df_raw |>
   mutate(across(where(is.character), str_trim)) |>
   filter(lightness != "#N/A") |>
   filter(raw_lightness != 0) |>
-  filter(lightness != 0) 
+  filter(lightness != 0) |>
+  filter(delta_E > 10)
 
 # Correct data types
 df <- df_raw |>
