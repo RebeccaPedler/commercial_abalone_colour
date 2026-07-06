@@ -12,9 +12,15 @@ Rebecca L. Pedler, Matthew S. Bansemer, James O. Harris, Ondi L. Crino
 
 This repository contains the full analytical pipeline used to quantify lip colour from images of farmed greenlip abalone. The study examines the effects of shade cloth coverage and abalone age on CIELAB lip colour metrics using linear mixed effects models.
 
-## Dependancies 
-
-Colour data was extracted using the pipeline detailed in [INSERT LINK TO GITHUB]
+**Methods note:** Colour and morphometric data in this repository were 
+> derived using the abalone_tool_kit pipeline (colour correction, lip 
+> segmentation, colour extraction, and morphometric measurement scripts). 
+> Full method details, validation metrics, and usage instructions are 
+> available at:
+> [ ] https://github.com/RebeccaPedler/abalone_tool_kit
+>
+> If you use this data or method, please cite:
+> [ ] Pedler et al., MethodsX (in prep/press) — full citation once available
 
 ## Repository structure
 
