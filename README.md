@@ -15,10 +15,10 @@ This repository contains the full analytical pipeline used to quantify lip colou
 **Methods note:** Colour and morphometric data in this repository were derived using the abalone_tool_kit pipeline (colour correction, lip segmentation, colour extraction, and morphometric measurement scripts). 
 
 Full method details, validation metrics, and usage instructions are available at:
-[ ] https://github.com/RebeccaPedler/abalone_tool_kit
+https://github.com/RebeccaPedler/abalone_tool_kit
 
 If you use this data or method, please cite:
-[ ] Pedler et al., MethodsX (in prep/press) — full citation once available
+Pedler et al., MethodsX (in prep/press) — full citation once available
 
 ## Repository structure
 
