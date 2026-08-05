@@ -675,7 +675,7 @@ run_diagnostics <- function(mod, label, resp, data = df_mod) {
                      TRUE               ~ "ns")
   }
 
-  # Residual ICC — FIX: definition was broken by an inline comment
+  # Residual ICC 
   resid_df    <- data.frame(tank = data$tank, resid = resid_raw)
   overall_var <- var(resid_df$resid)
   mean_within <- resid_df |>
@@ -1839,8 +1839,40 @@ check_coverage <- function(data, label) {
 check_coverage(df_19, "Age 19 months")
 check_coverage(df_31, "Age 31 months")
 
-## RUN LMM
+## NULL MODELS & ICC — BY AGE COHORT
+# Fit intercept-only models (REML) to estimate ICC separately for each age cohort,
+# to check whether tank-level clustering differs between age 19 and age 31 months
 
+fit_null_icc <- function(data, cohort_label) {
+  null_b      <- lmer(b         ~ 1 + (1 | tank), data = data, REML = TRUE,
+                       control = lmerControl(optimizer = "bobyqa"))
+  null_L      <- lmer(lightness ~ 1 + (1 | tank), data = data, REML = TRUE,
+                       control = lmerControl(optimizer = "bobyqa"))
+  null_a      <- lmer(a         ~ 1 + (1 | tank), data = data, REML = TRUE,
+                       control = lmerControl(optimizer = "bobyqa"))
+  null_chroma <- lmer(chroma    ~ 1 + (1 | tank), data = data, REML = TRUE,
+                       control = lmerControl(optimizer = "bobyqa"))
+
+  data.frame(
+    cohort   = cohort_label,
+    response = c("b*", "L*", "a*", "chroma"),
+    n        = nrow(data),
+    n_tanks  = n_distinct(data$tank),
+    ICC      = round(c(performance::icc(null_b)$ICC_adjusted,
+                       performance::icc(null_L)$ICC_adjusted,
+                       performance::icc(null_a)$ICC_adjusted,
+                       performance::icc(null_chroma)$ICC_adjusted), 4)
+  )
+}
+
+icc_table_19 <- fit_null_icc(df_19, "Age 19")
+icc_table_31 <- fit_null_icc(df_31, "Age 31")
+
+icc_table_by_age <- bind_rows(icc_table_19, icc_table_31)
+
+print(icc_table_by_age, row.names = FALSE)
+                     
+## RUN LMM
 # set CNTRL
 ctrl <- lmeControl(opt = "optim", maxIter = 200, msMaxIter = 200)
 
