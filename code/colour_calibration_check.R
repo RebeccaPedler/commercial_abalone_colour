@@ -1,105 +1,132 @@
-# Project: What makes a green lip? Moderators of lip colour in farmed greenlip abalone (Haliotis laevigata Donovan)
+## Project: What makes a green lip? An observational study of age, size, and light effects on the lip colour of farmed greenlip abalone (Haliotis laevigata Donovan)
 
-## Step 1: Colour calibration check
+## Step 1b: Colour correction check (image-level calibration, not per-metric r2)
 
 # Install packages and load libraries
-install.packages("here")
+install.packages("here", "ggplot2", "patchwork") 
+
 library(here)
+library(ggplot2)
+library(patchwork)
 
-# Script 01: Data structuring, factor setup, and inspection
-
-### LOAD & CLEAN DATA
-df <- read.csv(here("data", "lip_colour_commercial.csv"))
+# Script 01b: Correction factor structuring, quality/failure summary, and dE spread
+### LOAD & INSPECT DATA
+df <- read.csv(here("data", "correction_factors.csv"))
 nrow(df)
 str(df)
 
-##  ColorChecker correction quality (r2) per metric
-
-r2_cols <- c("L*" = "L_r2", "a*" = "a_r2", "b*" = "b_r2")  # map each metric to its calibration r2 column 
-r2_thresholds <- c(0.95, 0.90, 0.80)  # thresholds 
-
-# Make r2 columns to numeric; treat 0 (and NA) as FAILED corrections 
-for (col in r2_cols) {
-  df[[col]] <- suppressWarnings(as.numeric(df[[col]]))
-}
-
-# Per-metric summary 
-calibration_summary <- function(data, cols = r2_cols, thresh = r2_thresholds) {
-  out <- lapply(names(cols), function(metric) {
-    x      <- data[[cols[[metric]]]]
-    failed <- is.na(x) | x == 0            # failed / missing correction
-    valid  <- x[!failed]                   # genuine fits only
-    base <- data.frame(
-      metric    = metric,
-      n_total   = length(x),
-      n_failed  = sum(failed),
-      n_valid   = length(valid),
-      mean_r2   = round(mean(valid),   4),
-      median_r2 = round(median(valid), 4),
-      min_r2    = round(min(valid),    4),
-      max_r2    = round(max(valid),    4),
+##  Calibration quality (good / acceptable / poor) summary 
+quality_levels <- c("poor", "acceptable", "good")  # ordered worst to best (matches dE_before_after_by_quality.png in validation/colour_calibration/)
+ 
+# Per-category summary, styled the same way as calibration_summary() above
+quality_summary <- function(data, levels = quality_levels) {
+  calibrated <- data[data$status == "calibrated", ]
+  n_total    <- nrow(calibrated)
+  out <- lapply(levels, function(q) {
+    n <- sum(calibrated$quality == q, na.rm = TRUE)
+    data.frame(
+      quality = q,
+      n       = n,
+      pct     = round(100 * n / n_total, 1),
       stringsAsFactors = FALSE
     )
-    # % of VALID fits falling below each threshold
-    for (t in thresh) {
-      base[[paste0("pct_below_", t)]] <- round(100 * mean(valid < t), 1)
-    }
-    base
   })
   do.call(rbind, out)
 }
-
-cal_summary <- calibration_summary(df)
-
+qual_summary <- quality_summary(df)
+ 
 # Print summary
-print(cal_summary, row.names = FALSE)
-
-# Breakdown by photographing day (calibration often drifts by session)
-calibration_by_day <- function(data, cols = r2_cols, day = "date") {
-  do.call(rbind, lapply(names(cols), function(metric) {
-    x      <- data[[cols[[metric]]]]
-    keep   <- !(is.na(x) | x == 0)
-    ag     <- aggregate(x[keep], list(day = data[[day]][keep]),
-                        FUN = function(v) c(mean = mean(v), min = min(v),
-                                            pct_lt_090 = 100 * mean(v < 0.90)))
-    res <- data.frame(metric = metric, day = ag$day,
-                      mean_r2    = round(ag$x[, "mean"],       4),
-                      min_r2     = round(ag$x[, "min"],        4),
-                      pct_r2_lt_090 = round(ag$x[, "pct_lt_090"], 1))
-    res
-  }))
+print(qual_summary, row.names = FALSE)
+ 
+## Failed calibration summary (status = "no_checker_found" or "fit_failed") 
+fail_statuses <- c("no_checker_found", "fit_failed")
+ 
+failure_summary <- function(data, statuses = fail_statuses) {
+  n_total <- nrow(data)
+  out <- lapply(statuses, function(s) {
+    n <- sum(data$status == s, na.rm = TRUE)
+    data.frame(
+      status = s,
+      n      = n,
+      pct    = round(100 * n / n_total, 1),
+      stringsAsFactors = FALSE
+    )
+  })
+  base <- do.call(rbind, out)
+  n_failed_total <- sum(base$n)
+  rbind(base, data.frame(
+    status = "all_failed",
+    n      = n_failed_total,
+    pct    = round(100 * n_failed_total / n_total, 1)
+  ))
 }
-
-# Print
-print(calibration_by_day(df), row.names = FALSE)
-
-# Row-level quality flags 
-qc_cut <- 0.90  # flag any < 0.90
-for (metric in names(r2_cols)) {
-  col <- r2_cols[[metric]]
-  ch  <- sub("\\*", "", metric)                      
-  df[[paste0("failed_", ch)]] <- is.na(df[[col]]) | df[[col]] == 0
-  df[[paste0("poor_",   ch)]] <- !df[[paste0("failed_", ch)]] & df[[col]] < qc_cut
-}
-
-cat(sprintf("\nRows flagged poor (valid fit, r2 < %.2f): L*=%d  a*=%d  b*=%d\n",
-            qc_cut, sum(df$poor_L), sum(df$poor_a), sum(df$poor_b)))
-
-
-df$any_bad <- (df$failed_L | df$failed_a | df$failed_b) |
-              (df$poor_L   | df$poor_a   | df$poor_b)
-
-# Print date and tank summaries
-df$bad_L <- df$failed_L | df$poor_L
-df$bad_a <- df$failed_a | df$poor_a
-df$bad_b <- df$failed_b | df$poor_b
-
-# Per tank
-print(aggregate(cbind(L = bad_L, a = bad_a, b = bad_b) ~ tank, df, sum),
-      row.names = FALSE)
-
-# Per date
-print(aggregate(cbind(L = bad_L, a = bad_a, b = bad_b) ~ date, df, sum),
-      row.names = FALSE)
+fail_summary <- failure_summary(df)
+ 
+# Print summary
+print(fail_summary, row.names = FALSE)
+ 
+### FILTER OUT FAILED CALIBRATION IMAGES 
+df_ok <- df[df$status == "calibrated", ]
+cat(sprintf("\nRetained %d of %d images (calibration succeeded)\n", nrow(df_ok), nrow(df)))
+ 
+# Order quality as a factor, worst to best, for consistent plotting order
+df_ok$quality <- factor(df_ok$quality, levels = quality_levels)
+ 
+### PLOTS: dE spread before calibration, and after calibration by quality 
+ 
+# shared minimal theme: no gridlines, external tick marks, no titles
+no_grid_theme <- theme_classic(base_size = 12) +
+  theme(
+    legend.position = "none",
+    panel.grid      = element_blank()
+  )
+ 
+# Panel A: dE_before across ALL calibrated images (no quality split) 
+mean_before <- mean(df_ok$dE_before, na.rm = TRUE)
+sd_before   <- sd(df_ok$dE_before,   na.rm = TRUE)
+label_before <- sprintf("%.2f \u00B1 %.2f", mean_before, sd_before)
+y_pos_before <- max(df_ok$dE_before, na.rm = TRUE) * 1.08
+ 
+p_before <- ggplot(df_ok, aes(x = "All images", y = dE_before)) +
+  geom_boxplot(width = 0.4, fill = "#C44E52", outlier.size = 0.8, outlier.alpha = 0.4) +
+  annotate("text", x = 1, y = y_pos_before, label = label_before, size = 3.8) +
+  labs(x = NULL, y = expression(Delta * "E")) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.12))) +
+  no_grid_theme
+ 
+# Panel B: dE_after split by quality (poor / acceptable / good) 
+qual_n      <- table(df_ok$quality)
+qual_labels <- setNames(paste0(names(qual_n), "\n(n=", as.integer(qual_n), ")"),
+                        names(qual_n))
+ 
+# per-quality mean +/- SD of dE_after, positioned just above each group's max
+agg_mean <- tapply(df_ok$dE_after, df_ok$quality, mean, na.rm = TRUE)
+agg_sd   <- tapply(df_ok$dE_after, df_ok$quality, sd,   na.rm = TRUE)
+agg_max  <- tapply(df_ok$dE_after, df_ok$quality, max,  na.rm = TRUE)
+ 
+stats_after <- data.frame(
+  quality = factor(names(agg_mean), levels = quality_levels),
+  label   = sprintf("%.2f \u00B1 %.2f", agg_mean, agg_sd),
+  y_pos   = as.numeric(agg_max) * 1.08
+)
+ 
+p_after <- ggplot(df_ok, aes(x = quality, y = dE_after, fill = quality)) +
+  geom_boxplot(width = 0.5, outlier.size = 0.8, outlier.alpha = 0.4) +
+  geom_text(data = stats_after, aes(x = quality, y = y_pos, label = label),
+            inherit.aes = FALSE, size = 3.8) +
+  scale_fill_manual(values = c("poor" = "#C44E52", "acceptable" = "#DD8452", "good" = "#55A868")) +
+  scale_x_discrete(labels = qual_labels[levels(df_ok$quality)]) +
+  labs(x = NULL, y = expression(Delta * "E after calibration")) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.12))) +
+  no_grid_theme
+ 
+# Stitch together with patchwork, tagged A / B
+combined_plot <- p_before + p_after +
+  patchwork::plot_annotation(tag_levels = "A")
+ 
+# Save alongside the other correction-factor outputs
+ggsave(filename = here("figures", "dE_before_after_by_quality.png"),plot = combined_plot, width = 10, height = 5, dpi = 300)
+ 
+combined_plot
 
 ### END OF SCRIPT ###
