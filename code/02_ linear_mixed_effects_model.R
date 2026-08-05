@@ -1,4 +1,4 @@
-# Project: What makes a green lip? Moderators of lip colour in farmed greenlip abalone (Haliotis laevigata Donovan)
+## Project: What makes a green lip? An observational study of age, size, and light effects on the lip colour of farmed greenlip abalone (Haliotis laevigata Donovan)
 
 ## Step 2: Running linear mixed effect models
 
